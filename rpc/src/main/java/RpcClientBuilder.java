@@ -1,7 +1,7 @@
 import java.io.IOException;
 import java.lang.reflect.Proxy;
 
-public class RpcBuilder {
+public class RpcClientBuilder {
 
     static ConnectionManager connectionManager = new ConnectionManager();
 
@@ -21,7 +21,7 @@ public class RpcBuilder {
             return rpcConnection;
         });
 
-        return (T) Proxy.newProxyInstance(RpcBuilder.class.getClassLoader(),
+        return (T) Proxy.newProxyInstance(RpcClientBuilder.class.getClassLoader(),
                                           new Class[]{serviceInterface},
                                           new RpcClientInvocationHandler(connection,
                                                                          RpcClientInvocationManager.getInstance()));

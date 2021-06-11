@@ -6,7 +6,7 @@ public class NettyClient {
     private static int MAX_RETRY = 5;
 
     public static void main(String[] args) {
-        ICalculator calculator = RpcBuilder.createRpc(host, 8070, ICalculator.class);
+        ICalculator calculator = RpcClientBuilder.createRpc(host, 8070, ICalculator.class);
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("a=");
