@@ -1,6 +1,8 @@
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
@@ -11,6 +13,7 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -44,7 +47,7 @@ public class ClientConnection {
             public void initChannel(SocketChannel ch) {
                 ch.pipeline().addLast("decoder", new StringDecoder());
                 ch.pipeline().addLast("encoder", new StringEncoder());
-                ch.pipeline().addLast(new ClientChannelHandler(ClientConnection.this));
+                ch.pipeline().addLast(new ChannelHandler());
             }
         });
     }
@@ -56,7 +59,7 @@ public class ClientConnection {
         doConnect(maxRetry);
     }
 
-    public void doConnect(int maxRetry) {
+    private void doConnect(int maxRetry) {
         bootstrap.connect(host, port).addListener((ChannelFuture channelFuture) -> {
             if (!channelFuture.isSuccess()) {
                 final EventLoop loop = channelFuture.channel().eventLoop();
@@ -72,5 +75,27 @@ public class ClientConnection {
                 log.info("成功连接{}:{}", this.host, this.port);
             }
         });
+    }
+
+    public class ChannelHandler extends ChannelInboundHandlerAdapter {
+        @Override
+        public void channelActive(ChannelHandlerContext ctx) {
+            ClientConnection.this.setChannel(ctx.channel());
+        }
+
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) {
+            log.info(new Date() + ": 客户端读到数据 -> " + msg.toString());
+        }
+
+        @Override
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+            ClientConnection.this.setChannel(null);
+
+            log.warn("Connection closed, trying re-connect...");
+            ClientConnection.this.doConnect(ClientConnection.this.maxRetry);
+
+            super.channelInactive(ctx);
+        }
     }
 }
