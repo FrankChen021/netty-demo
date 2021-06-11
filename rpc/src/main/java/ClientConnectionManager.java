@@ -1,7 +1,7 @@
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ConnectionManager {
+public class ClientConnectionManager {
 
     private Map<String, ClientConnection> connections = new ConcurrentHashMap<>();
 

@@ -3,12 +3,12 @@ import java.lang.reflect.Proxy;
 
 public class RpcClientBuilder {
 
-    static ConnectionManager connectionManager = new ConnectionManager();
+    static ClientConnectionManager clientConnectionManager = new ClientConnectionManager();
 
     public static <T> T createRpc(String host, int port, Class<T> serviceInterface) {
         String endpoint = host + ":" + port;
 
-        ClientConnection connection = connectionManager.getConnections().computeIfAbsent(endpoint, (key) -> {
+        ClientConnection connection = clientConnectionManager.getConnections().computeIfAbsent(endpoint, (key) -> {
             ClientConnection rpcConnection = new ClientConnection();
             rpcConnection.connect(host, port, ClientConnection.MAX_RETRY);
             rpcConnection.setIncomeMessageHandler((channel, message) -> {
