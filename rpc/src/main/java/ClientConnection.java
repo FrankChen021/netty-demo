@@ -13,32 +13,19 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 @Slf4j
 public class ClientConnection {
 
     public static final int MAX_RETRY = 30;
-
-    public void setChannel(Channel channel) {
-        this.channel = channel;
-    }
-
-    public Channel getChannel() {
-        return channel;
-    }
-
-    public int getMaxRetry() {
-        return maxRetry;
-    }
-
     private final Bootstrap bootstrap;
     private Channel channel;
     private String host;
     private int port;
     private int maxRetry;
-
+    private BiConsumer incomeMessageHandler;
     public ClientConnection() {
         bootstrap = new Bootstrap();
         bootstrap.group(new NioEventLoopGroup());
@@ -54,6 +41,22 @@ public class ClientConnection {
         });
     }
 
+    public Channel getChannel() {
+        return channel;
+    }
+
+    public void setChannel(Channel channel) {
+        this.channel = channel;
+    }
+
+    public int getMaxRetry() {
+        return maxRetry;
+    }
+
+    public void setIncomeMessageHandler(BiConsumer<Channel, Object> incomeMessageHandler) {
+        this.incomeMessageHandler = incomeMessageHandler;
+    }
+
     public void connect(String host, int port, int maxRetry) {
         this.host = host;
         this.port = port;
@@ -65,7 +68,7 @@ public class ClientConnection {
         bootstrap.connect(host, port).addListener((ChannelFuture channelFuture) -> {
             if (!channelFuture.isSuccess()) {
                 final EventLoop loop = channelFuture.channel().eventLoop();
-                if ( maxRetry == 0 ) {
+                if (maxRetry == 0) {
                     log.warn("无法连接{}:{}，已达到最大重试次数{}", this.host, this.port, this.maxRetry);
                     return;
                 }
@@ -87,7 +90,9 @@ public class ClientConnection {
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
-            log.info(new Date() + ": 客户端读到数据 -> " + msg.toString());
+            if (ClientConnection.this.incomeMessageHandler != null) {
+                ClientConnection.this.incomeMessageHandler.accept(ctx.channel(), msg);
+            }
         }
 
         @Override

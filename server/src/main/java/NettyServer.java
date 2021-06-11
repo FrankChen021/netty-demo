@@ -12,8 +12,8 @@ import java.util.Scanner;
 
 public class NettyServer {
 
-    private static NioEventLoopGroup bossGroup = new NioEventLoopGroup();
-    private static NioEventLoopGroup workerGroup = new NioEventLoopGroup();
+    private static final NioEventLoopGroup bossGroup = new NioEventLoopGroup();
+    private static final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
     public static void main(String[] args) {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
@@ -40,8 +40,9 @@ public class NettyServer {
                     ch.pipeline().addLast(new NettyServerHandler());
                 }
             });
-
         serverBootstrap.bind(8070);
+
+        RpcRegistry.register(ICalculator.class, (a, b) -> a + b);
 
         Scanner scanner = new Scanner(System.in);
         while(true) {
