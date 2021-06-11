@@ -19,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ClientConnection {
 
+    public static final int MAX_RETRY = 30;
+
     public void setChannel(Channel channel) {
         this.channel = channel;
     }
