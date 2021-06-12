@@ -15,9 +15,9 @@ public class ServiceStubBuilder {
         String remoteEndpoint = host + ":" + port;
 
         ClientConnection connection = connections.computeIfAbsent(remoteEndpoint, (key) -> {
-            ClientConnection rpcConnection = new ClientConnection();
-            rpcConnection.connect(host, port, ClientConnection.MAX_RETRY);
-            return rpcConnection;
+            ClientConnection serviceConnection = new ClientConnection();
+            serviceConnection.connect(host, port, ClientConnection.MAX_RETRY);
+            return serviceConnection;
         });
 
         return (T) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
