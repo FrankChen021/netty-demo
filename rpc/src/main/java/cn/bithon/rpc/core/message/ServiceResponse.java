@@ -6,6 +6,9 @@ import lombok.Data;
 @Data
 @Builder
 public class ServiceResponse {
+    /**
+     * {@link ServiceMessageType}
+     */
     private long messageType;
     private long transactionId;
     private long serverResponseAt;

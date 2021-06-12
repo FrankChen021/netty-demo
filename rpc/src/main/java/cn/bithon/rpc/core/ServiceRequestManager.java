@@ -39,6 +39,11 @@ public class ServiceRequestManager {
     private final AtomicLong transactionId = new AtomicLong();
     private final ObjectMapper om = new JsonMapper();
     private final Map<Long, PendingRequest> pendingRequests = new ConcurrentHashMap<>();
+    private final ThreadLocal<Integer> timeoutSetting = new InheritableThreadLocal<>();
+
+    public void setCurrentTimeout(int timeout) {
+        timeoutSetting.set(timeout);
+    }
 
     public void onResponse(JsonNode responseNode) {
         JsonNode transactionId = responseNode.get("transactionId");
@@ -95,8 +100,9 @@ public class ServiceRequestManager {
         }
         if (pendingRequest != null) {
             try {
+                Integer timeout = timeoutSetting.get();
                 synchronized (pendingRequest) {
-                    pendingRequest.wait(5000);
+                    pendingRequest.wait(timeout == null ? 5000 : timeout);
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
