@@ -1,3 +1,5 @@
+import io.netty.channel.Channel;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
@@ -8,17 +10,17 @@ import java.lang.reflect.Method;
  */
 public class RpcClientInvocationHandler implements InvocationHandler {
 
-    private final ClientConnection connection;
+    private final IRpcChannelProvider channelProvider;
     private final RpcClientInvocationManager rpcClientInvocationManager;
 
-    public RpcClientInvocationHandler(ClientConnection connection,
+    public RpcClientInvocationHandler(IRpcChannelProvider channelProvider,
                                       RpcClientInvocationManager rpcClientInvocationManager) {
-        this.connection = connection;
+        this.channelProvider = channelProvider;
         this.rpcClientInvocationManager = rpcClientInvocationManager;
     }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
-        return rpcClientInvocationManager.sendClientRequest(connection.getChannel(), proxy, method, args);
+        return rpcClientInvocationManager.sendClientRequest(channelProvider.getChannel(), method, args);
     }
 }

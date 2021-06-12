@@ -1,29 +1,32 @@
-import java.io.IOException;
+import io.netty.channel.Channel;
+
 import java.lang.reflect.Proxy;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RpcClientBuilder {
 
-    static ClientConnectionManager clientConnectionManager = new ClientConnectionManager();
+    private static Map<String, ClientConnection> connections = new ConcurrentHashMap<>();
 
     public static <T> T createRpc(String host, int port, Class<T> serviceInterface) {
         String endpoint = host + ":" + port;
 
-        ClientConnection connection = clientConnectionManager.getConnections().computeIfAbsent(endpoint, (key) -> {
+        ClientConnection connection = connections.computeIfAbsent(endpoint, (key) -> {
             ClientConnection rpcConnection = new ClientConnection();
             rpcConnection.connect(host, port, ClientConnection.MAX_RETRY);
-            rpcConnection.setIncomeMessageHandler((channel, message) -> {
-                try {
-                    RpcMessageReceiver.getInstance().onResponse(channel, message);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
             return rpcConnection;
         });
 
         return (T) Proxy.newProxyInstance(RpcClientBuilder.class.getClassLoader(),
                                           new Class[]{serviceInterface},
                                           new RpcClientInvocationHandler(connection,
+                                                                         RpcClientInvocationManager.getInstance()));
+    }
+
+    public static <T> T createRpc(Channel channel, Class<T> serviceInterface) {
+        return (T) Proxy.newProxyInstance(RpcClientBuilder.class.getClassLoader(),
+                                          new Class[]{serviceInterface},
+                                          new RpcClientInvocationHandler(() -> channel,
                                                                          RpcClientInvocationManager.getInstance()));
     }
 }

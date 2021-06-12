@@ -2,7 +2,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
@@ -14,10 +13,9 @@ import io.netty.handler.codec.string.StringEncoder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 
 @Slf4j
-public class ClientConnection {
+public class ClientConnection implements IRpcChannelProvider {
 
     public static final int MAX_RETRY = 30;
     private final Bootstrap bootstrap;
@@ -25,7 +23,7 @@ public class ClientConnection {
     private String host;
     private int port;
     private int maxRetry;
-    private BiConsumer incomeMessageHandler;
+
     public ClientConnection() {
         bootstrap = new Bootstrap();
         bootstrap.group(new NioEventLoopGroup());
@@ -36,25 +34,18 @@ public class ClientConnection {
             public void initChannel(SocketChannel ch) {
                 ch.pipeline().addLast("decoder", new StringDecoder());
                 ch.pipeline().addLast("encoder", new StringEncoder());
-                ch.pipeline().addLast(new ChannelHandler());
+                ch.pipeline().addLast(new ClientChannelHandler());
             }
         });
     }
 
+    @Override
     public Channel getChannel() {
         return channel;
     }
 
     public void setChannel(Channel channel) {
         this.channel = channel;
-    }
-
-    public int getMaxRetry() {
-        return maxRetry;
-    }
-
-    public void setIncomeMessageHandler(BiConsumer<Channel, Object> incomeMessageHandler) {
-        this.incomeMessageHandler = incomeMessageHandler;
     }
 
     public void connect(String host, int port, int maxRetry) {
@@ -82,17 +73,10 @@ public class ClientConnection {
         });
     }
 
-    public class ChannelHandler extends ChannelInboundHandlerAdapter {
+    public class ClientChannelHandler extends RpcChannelHandler {
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
             ClientConnection.this.setChannel(ctx.channel());
-        }
-
-        @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) {
-            if (ClientConnection.this.incomeMessageHandler != null) {
-                ClientConnection.this.incomeMessageHandler.accept(ctx.channel(), msg);
-            }
         }
 
         @Override
