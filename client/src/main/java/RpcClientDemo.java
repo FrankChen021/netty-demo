@@ -25,8 +25,12 @@ public class RpcClientDemo {
             System.out.print("b=");
             int b = scanner.nextInt();
 
-            int c = calculator.div(a, b);
-            System.out.printf("%d/%d=%d\n", a, b, c);
+            long s = System.currentTimeMillis();
+            for(int i = 0; i < 1000; i++) {
+                int c = calculator.div(a, b);
+            }
+            long e = System.currentTimeMillis();
+            System.out.printf("time=%d", e-s);
         }
     }
 }
