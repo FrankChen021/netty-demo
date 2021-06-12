@@ -1,6 +1,3 @@
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -9,9 +6,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class RpcServiceRegistry {
 
-    private static Map<String, RpcServiceProvider> registry = new ConcurrentHashMap<>();
+    private static final Map<String, RpcServiceProvider> registry = new ConcurrentHashMap<>();
 
-    public static <T> void register(Class<T> interfaceType, T impl) {
+    public static <T extends IService> void register(Class<T> interfaceType, T impl) {
         // override methods are not supported
         for (Method method : interfaceType.getDeclaredMethods()) {
             registry.put(interfaceType.getSimpleName() + "#" + method.getName(), new RpcServiceProvider(method, impl));

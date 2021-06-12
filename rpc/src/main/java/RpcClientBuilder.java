@@ -6,25 +6,27 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class RpcClientBuilder {
 
-    private static Map<String, ClientConnection> connections = new ConcurrentHashMap<>();
+    private static final Map<String, ClientConnection> connections = new ConcurrentHashMap<>();
 
-    public static <T> T createRpc(String host, int port, Class<T> serviceInterface) {
-        String endpoint = host + ":" + port;
+    @SuppressWarnings("unchecked")
+    public static <T extends IService> T createRpc(String host, int port, Class<T> serviceInterface) {
+        String remoteEndpoint = host + ":" + port;
 
-        ClientConnection connection = connections.computeIfAbsent(endpoint, (key) -> {
+        ClientConnection connection = connections.computeIfAbsent(remoteEndpoint, (key) -> {
             ClientConnection rpcConnection = new ClientConnection();
             rpcConnection.connect(host, port, ClientConnection.MAX_RETRY);
             return rpcConnection;
         });
 
-        return (T) Proxy.newProxyInstance(RpcClientBuilder.class.getClassLoader(),
+        return (T) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
                                           new Class[]{serviceInterface},
                                           new RpcClientInvocationHandler(connection,
                                                                          RpcClientInvocationManager.getInstance()));
     }
 
-    public static <T> T createRpc(Channel channel, Class<T> serviceInterface) {
-        return (T) Proxy.newProxyInstance(RpcClientBuilder.class.getClassLoader(),
+    @SuppressWarnings("unchecked")
+    public static <T extends IService> T createRpc(Channel channel, Class<T> serviceInterface) {
+        return (T) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
                                           new Class[]{serviceInterface},
                                           new RpcClientInvocationHandler(() -> channel,
                                                                          RpcClientInvocationManager.getInstance()));

@@ -1,5 +1,7 @@
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -9,14 +11,16 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.CharsetUtil;
 
-import java.util.Scanner;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RpcServer {
 
     private final NioEventLoopGroup bossGroup = new NioEventLoopGroup();
     private final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
-    public <T> RpcServer addService(Class<T> interfaceClass, T impl) {
+    public <T extends IService> RpcServer addService(Class<T> interfaceClass, T impl) {
         RpcServiceRegistry.register(interfaceClass, impl);
         return this;
     }
@@ -37,7 +41,8 @@ public class RpcServer {
                 protected void initChannel(NioSocketChannel ch) {
                     ch.pipeline().addLast("decoder", new StringDecoder(CharsetUtil.UTF_8));
                     ch.pipeline().addLast("encoder", new StringEncoder(CharsetUtil.UTF_8));
-                    ch.pipeline().addLast(new RpcServerChannelHandler());
+                    ch.pipeline().addLast(new RpcChannelHandler());
+                    ch.pipeline().addLast(new ClientChannelManager());
                 }
             });
         serverBootstrap.bind(port);
@@ -54,5 +59,41 @@ public class RpcServer {
             workerGroup.shutdownGracefully().sync();
         } catch (InterruptedException ignored) {
         }
+    }
+
+    static class ClientService {
+        public ClientService(Channel channel) {
+            this.channel = channel;
+        }
+
+        private final Channel channel;
+        private final Map<Class<? extends IService>, IService> services = new ConcurrentHashMap<>();
+    }
+
+    private final Map<String, ClientService> clientServices = new ConcurrentHashMap<>();
+
+    public Set<String> getClientEndpoints() {
+        return clientServices.keySet();
+    }
+
+    public class ClientChannelManager extends ChannelInboundHandlerAdapter {
+        @Override
+        public void channelActive(ChannelHandlerContext ctx) throws Exception {
+            Channel channel = ctx.channel();
+            clientServices.computeIfAbsent(channel.remoteAddress().toString(), key -> new ClientService(channel));
+            super.channelActive(ctx);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends IService> T getRpc(String endpoint, Class<T> serviceClass) {
+        ClientService clientService = clientServices.get(endpoint);
+        if (clientService == null) {
+            return null;
+        }
+
+        return (T) clientService.services.computeIfAbsent(serviceClass,
+                                                          key -> RpcClientBuilder.createRpc(clientService.channel,
+                                                                                            serviceClass));
     }
 }

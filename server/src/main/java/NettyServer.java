@@ -1,5 +1,3 @@
-import io.netty.channel.Channel;
-
 import java.util.Scanner;
 
 public class NettyServer {
@@ -26,8 +24,8 @@ public class NettyServer {
                 break;
             }
 
-            for (Channel channel : RpcServerChannelHandler.channelGroup) {
-                INotification notification = RpcClientBuilder.createRpc(channel, INotification.class);
+            for (String clientEndpoint : rpcServer.getClientEndpoints()) {
+                INotification notification = rpcServer.getRpc(clientEndpoint, INotification.class);
                 notification.notify(line);
             }
         }

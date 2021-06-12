@@ -21,7 +21,7 @@ public class NettyClient {
             int b = scanner.nextInt();
 
             int c = calculator.div(a, b);
-            System.out.printf("%d+%d=%d\n", a, b, c);
+            System.out.printf("%d/%d=%d\n", a, b, c);
         }
     }
 }
