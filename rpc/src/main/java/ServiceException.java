@@ -5,6 +5,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RpcException {
+public class ServiceException {
     private String message;
 }

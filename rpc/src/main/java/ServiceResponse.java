@@ -3,10 +3,10 @@ import lombok.Data;
 
 @Data
 @Builder
-public class RpcResponse {
+public class ServiceResponse {
     private long messageType;
     private long transactionId;
     private long serverResponseAt;
     private Object returning;
-    private RpcException exception;
+    private ServiceException exception;
 }

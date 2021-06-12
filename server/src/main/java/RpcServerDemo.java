@@ -1,8 +1,8 @@
 import java.util.Scanner;
 
-public class NettyServer {
+public class RpcServerDemo {
     public static void main(String[] args) {
-        RpcServer rpcServer = new RpcServer()
+        ServiceHost serviceHost = new ServiceHost()
             .addService(ICalculator.class, new ICalculator() {
                 @Override
                 public int add(int a, int b) {
@@ -20,12 +20,12 @@ public class NettyServer {
         while (true) {
             String line = scanner.nextLine();
             if ("stop".equals(line)) {
-                rpcServer.stop();
+                serviceHost.stop();
                 break;
             }
 
-            for (String clientEndpoint : rpcServer.getClientEndpoints()) {
-                INotification notification = rpcServer.getRpc(clientEndpoint, INotification.class);
+            for (String clientEndpoint : serviceHost.getClientEndpoints()) {
+                INotification notification = serviceHost.getServiceStub(clientEndpoint, INotification.class);
                 notification.notify(line);
             }
         }

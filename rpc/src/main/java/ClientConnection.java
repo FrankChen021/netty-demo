@@ -2,6 +2,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
@@ -15,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class ClientConnection implements IRpcChannelProvider {
+public class ClientConnection implements IServiceChannelProvider {
 
     public static final int MAX_RETRY = 30;
     private final Bootstrap bootstrap;
@@ -34,7 +35,8 @@ public class ClientConnection implements IRpcChannelProvider {
             public void initChannel(SocketChannel ch) {
                 ch.pipeline().addLast("decoder", new StringDecoder());
                 ch.pipeline().addLast("encoder", new StringEncoder());
-                ch.pipeline().addLast(new ClientChannelHandler());
+                ch.pipeline().addLast(new ClientChannelManager());
+                ch.pipeline().addLast(new ServiceChannelReader());
             }
         });
     }
@@ -42,10 +44,6 @@ public class ClientConnection implements IRpcChannelProvider {
     @Override
     public Channel getChannel() {
         return channel;
-    }
-
-    public void setChannel(Channel channel) {
-        this.channel = channel;
     }
 
     public void connect(String host, int port, int maxRetry) {
@@ -73,15 +71,15 @@ public class ClientConnection implements IRpcChannelProvider {
         });
     }
 
-    public class ClientChannelHandler extends RpcChannelHandler {
+    public class ClientChannelManager extends ChannelInboundHandlerAdapter {
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
-            ClientConnection.this.setChannel(ctx.channel());
+            ClientConnection.this.channel = ctx.channel();
         }
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            ClientConnection.this.setChannel(null);
+            ClientConnection.this.channel = null;
 
             log.warn("Connection closed, trying re-connect...");
             ClientConnection.this.doConnect(ClientConnection.this.maxRetry);

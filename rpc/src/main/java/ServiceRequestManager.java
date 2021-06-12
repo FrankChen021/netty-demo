@@ -12,16 +12,28 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
-public class RpcClientInvocationManager {
+public class ServiceRequestManager {
 
-    private static RpcClientInvocationManager INSTANCE = new RpcClientInvocationManager();
+    private static final ServiceRequestManager INSTANCE = new ServiceRequestManager();
+
+    public static ServiceRequestManager getInstance() {
+        return INSTANCE;
+    }
+
+    @Data
+    public static class PendingRequest {
+        private String serviceName;
+        private String methodName;
+        long requestAt;
+        long responseAt;
+        Class<?> returnObjType;
+        Object response;
+        ServiceException exception;
+    }
+
     private final AtomicLong transactionId = new AtomicLong();
     private final ObjectMapper om = new JsonMapper();
     private final Map<Long, PendingRequest> pendingRequests = new ConcurrentHashMap<>();
-
-    public static RpcClientInvocationManager getInstance() {
-        return INSTANCE;
-    }
 
     public void onResponse(JsonNode responseNode) {
         JsonNode transactionId = responseNode.get("transactionId");
@@ -43,22 +55,22 @@ public class RpcClientInvocationManager {
 
             JsonNode exceptionNode = responseNode.get("exception");
             if (exceptionNode != null && !exceptionNode.isNull()) {
-                pendingRequest.exception = om.convertValue(exceptionNode, RpcException.class);
+                pendingRequest.exception = om.convertValue(exceptionNode, ServiceException.class);
             }
 
             pendingRequest.notify();
         }
     }
 
-    public Object sendClientRequest(Channel channel, Method method, Object[] args) {
-        RpcRequest rpcRequest = RpcRequest.builder()
-                                          .serviceName(method.getDeclaringClass().getSimpleName())
-                                          .methodName(method.getName())
-                                          .transactionId(transactionId.incrementAndGet())
-                                          .messageType(RpcMessageType.CLIENT_REQUEST)
-                                          .args(args)
-                                          .build();
-        log.info("sending client request:{}", rpcRequest);
+    public Object sendServiceRequest(Channel channel, Method method, Object[] args) {
+        ServiceRequest serviceRequest = ServiceRequest.builder()
+                                                      .serviceName(method.getDeclaringClass().getSimpleName())
+                                                      .methodName(method.getName())
+                                                      .transactionId(transactionId.incrementAndGet())
+                                                      .messageType(ServiceMessageType.CLIENT_REQUEST)
+                                                      .args(args)
+                                                      .build();
+        log.info("sending client request:{}", serviceRequest);
 
         Class<?> returnType = method.getReturnType();
         boolean isReturnVoid = returnType.equals(Void.TYPE);
@@ -66,13 +78,13 @@ public class RpcClientInvocationManager {
         if (!isReturnVoid) {
             pendingRequest = new PendingRequest();
             pendingRequest.requestAt = System.currentTimeMillis();
-            pendingRequest.methodName = rpcRequest.getMethodName();
-            pendingRequest.serviceName = rpcRequest.getServiceName();
+            pendingRequest.methodName = serviceRequest.getMethodName();
+            pendingRequest.serviceName = serviceRequest.getServiceName();
             pendingRequest.returnObjType = returnType;
-            this.pendingRequests.put(rpcRequest.getTransactionId(), pendingRequest);
+            this.pendingRequests.put(serviceRequest.getTransactionId(), pendingRequest);
         }
         try {
-            channel.writeAndFlush(om.writeValueAsString(rpcRequest));
+            channel.writeAndFlush(om.writeValueAsString(serviceRequest));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
@@ -85,22 +97,10 @@ public class RpcClientInvocationManager {
                 e.printStackTrace();
             }
             if (pendingRequest.exception != null) {
-                throw new RpcInvocationException(pendingRequest.exception.getMessage());
+                throw new ServiceInvocationException(pendingRequest.exception.getMessage());
             }
             return pendingRequest.response;
         }
         return null;
     }
-
-    @Data
-    public static class PendingRequest {
-        private String serviceName;
-        private String methodName;
-        long requestAt;
-        long responseAt;
-        Class returnObjType;
-        Object response;
-        RpcException exception;
-    }
-
 }

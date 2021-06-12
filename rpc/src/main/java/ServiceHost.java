@@ -15,17 +15,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class RpcServer {
+public class ServiceHost {
 
     private final NioEventLoopGroup bossGroup = new NioEventLoopGroup();
     private final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
-    public <T extends IService> RpcServer addService(Class<T> interfaceClass, T impl) {
-        RpcServiceRegistry.register(interfaceClass, impl);
+    public <T extends IService> ServiceHost addService(Class<T> interfaceClass, T impl) {
+        ServiceRegistry.register(interfaceClass, impl);
         return this;
     }
 
-    public RpcServer start(int port) {
+    public ServiceHost start(int port) {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap
             .group(bossGroup, workerGroup)
@@ -41,7 +41,7 @@ public class RpcServer {
                 protected void initChannel(NioSocketChannel ch) {
                     ch.pipeline().addLast("decoder", new StringDecoder(CharsetUtil.UTF_8));
                     ch.pipeline().addLast("encoder", new StringEncoder(CharsetUtil.UTF_8));
-                    ch.pipeline().addLast(new RpcChannelHandler());
+                    ch.pipeline().addLast(new ServiceChannelReader());
                     ch.pipeline().addLast(new ClientChannelManager());
                 }
             });
@@ -76,7 +76,7 @@ public class RpcServer {
         return clientServices.keySet();
     }
 
-    public class ClientChannelManager extends ChannelInboundHandlerAdapter {
+    class ClientChannelManager extends ChannelInboundHandlerAdapter {
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             Channel channel = ctx.channel();
@@ -86,14 +86,14 @@ public class RpcServer {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends IService> T getRpc(String endpoint, Class<T> serviceClass) {
-        ClientService clientService = clientServices.get(endpoint);
+    public <T extends IService> T getServiceStub(String clientEndpoint, Class<T> serviceClass) {
+        ClientService clientService = clientServices.get(clientEndpoint);
         if (clientService == null) {
             return null;
         }
 
         return (T) clientService.services.computeIfAbsent(serviceClass,
-                                                          key -> RpcClientBuilder.createRpc(clientService.channel,
-                                                                                            serviceClass));
+                                                          key -> ServiceStubBuilder.build(clientService.channel,
+                                                                                          serviceClass));
     }
 }

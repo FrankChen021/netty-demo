@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 
 @Slf4j
-public class RpcChannelHandler extends ChannelInboundHandlerAdapter {
+public class ServiceChannelReader extends ChannelInboundHandlerAdapter {
 
     private final ObjectMapper om = new JsonMapper();
 
@@ -24,10 +24,10 @@ public class RpcChannelHandler extends ChannelInboundHandlerAdapter {
             }
 
             long messageType = messageTypeNode.asLong();
-            if (messageType == RpcMessageType.CLIENT_REQUEST) {
-                RpcServiceInvocationManager.getInstance().invoke(ctx.channel(), messageJsonNode);
-            } else if (messageType == RpcMessageType.SERVER_RESPONSE) {
-                RpcClientInvocationManager.getInstance().onResponse(messageJsonNode);
+            if (messageType == ServiceMessageType.CLIENT_REQUEST) {
+                ServiceInvocationManager.getInstance().invoke(ctx.channel(), messageJsonNode);
+            } else if (messageType == ServiceMessageType.SERVER_RESPONSE) {
+                ServiceRequestManager.getInstance().onResponse(messageJsonNode);
             }
         } catch (IOException e) {
 

@@ -1,6 +1,6 @@
 import io.netty.channel.Channel;
 
-public interface IRpcChannelProvider {
+public interface IServiceChannelProvider {
 
     Channel getChannel();
 }

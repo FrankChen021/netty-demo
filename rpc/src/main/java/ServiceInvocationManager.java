@@ -14,11 +14,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class RpcServiceInvocationManager {
+public class ServiceInvocationManager {
 
-    private static final RpcServiceInvocationManager INSTANCE = new RpcServiceInvocationManager();
+    private static final ServiceInvocationManager INSTANCE = new ServiceInvocationManager();
 
-    public static RpcServiceInvocationManager getInstance() {
+    public static ServiceInvocationManager getInstance() {
         return INSTANCE;
     }
 
@@ -33,7 +33,7 @@ public class RpcServiceInvocationManager {
         executor.execute(new Invoker(om, channel, messageNode));
     }
 
-    static class BadRequestException extends RpcInvocationException {
+    static class BadRequestException extends ServiceInvocationException {
         public BadRequestException(String message) {
             super(message);
         }
@@ -73,7 +73,7 @@ public class RpcServiceInvocationManager {
 
                 String serviceName = serviceNameNode.asText();
                 String methodName = methodNameNode.asText();
-                RpcServiceRegistry.RpcServiceProvider serviceProvider = RpcServiceRegistry.findServiceProvider(
+                ServiceRegistry.RpcServiceProvider serviceProvider = ServiceRegistry.findServiceProvider(
                     serviceName,
                     methodName);
                 if (serviceProvider == null) {
@@ -86,49 +86,49 @@ public class RpcServiceInvocationManager {
                 try {
                     ret = serviceProvider.invoke(inputArgs);
                 } catch (IllegalAccessException e) {
-                    throw new RpcInvocationException("Service[%s#%s] exception: %s",
-                                                     serviceName,
-                                                     methodName,
-                                                     e.getMessage());
+                    throw new ServiceInvocationException("Service[%s#%s] exception: %s",
+                                                         serviceName,
+                                                         methodName,
+                                                         e.getMessage());
                 } catch (InvocationTargetException e) {
-                    throw new RpcInvocationException("Service[%s#%s] invocation exception: %s",
-                                                     serviceName,
-                                                     methodName,
-                                                     e.getTargetException().toString());
+                    throw new ServiceInvocationException("Service[%s#%s] invocation exception: %s",
+                                                         serviceName,
+                                                         methodName,
+                                                         e.getTargetException().toString());
                 }
 
                 if (!serviceProvider.isReturnVoid()) {
-                    sendResponse(RpcResponse.builder()
-                                            .messageType(RpcMessageType.SERVER_RESPONSE)
-                                            .serverResponseAt(System.currentTimeMillis())
-                                            .transactionId(txId)
-                                            .returning(ret)
-                                            .build());
+                    sendResponse(ServiceResponse.builder()
+                                                .messageType(ServiceMessageType.SERVER_RESPONSE)
+                                                .serverResponseAt(System.currentTimeMillis())
+                                                .transactionId(txId)
+                                                .returning(ret)
+                                                .build());
                 }
             } catch (BadRequestException e) {
                 if (txId != null) {
-                    sendResponse(RpcResponse.builder()
-                                            .messageType(RpcMessageType.SERVER_RESPONSE)
+                    sendResponse(ServiceResponse.builder()
+                                                .messageType(ServiceMessageType.SERVER_RESPONSE)
+                                                .serverResponseAt(System.currentTimeMillis())
+                                                .transactionId(txId)
+                                                .exception(new ServiceException(e.getMessage()))
+                                                .build());
+                }
+            } catch (ServiceInvocationException e) {
+                sendResponse(ServiceResponse.builder()
+                                            .messageType(ServiceMessageType.SERVER_RESPONSE)
                                             .serverResponseAt(System.currentTimeMillis())
                                             .transactionId(txId)
-                                            .exception(new RpcException(e.getMessage()))
+                                            .exception(new ServiceException(e.getMessage()))
                                             .build());
-                }
-            } catch (RpcInvocationException e) {
-                sendResponse(RpcResponse.builder()
-                                        .messageType(RpcMessageType.SERVER_RESPONSE)
-                                        .serverResponseAt(System.currentTimeMillis())
-                                        .transactionId(txId)
-                                        .exception(new RpcException(e.getMessage()))
-                                        .build());
             }
         }
 
-        private void sendResponse(RpcResponse rpcResponse) {
+        private void sendResponse(ServiceResponse serviceResponse) {
             try {
-                channel.writeAndFlush(om.writeValueAsString(rpcResponse));
+                channel.writeAndFlush(om.writeValueAsString(serviceResponse));
             } catch (IOException e) {
-                log.error(String.format("Exception sending RPC response(%s)", rpcResponse), e);
+                log.error(String.format("Exception sending RPC response(%s)", serviceResponse), e);
             }
         }
 

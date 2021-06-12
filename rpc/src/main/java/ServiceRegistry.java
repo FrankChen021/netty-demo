@@ -4,7 +4,7 @@ import java.lang.reflect.Parameter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class RpcServiceRegistry {
+public class ServiceRegistry {
 
     private static final Map<String, RpcServiceProvider> registry = new ConcurrentHashMap<>();
 

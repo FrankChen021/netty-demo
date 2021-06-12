@@ -3,7 +3,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class RpcRequest {
+public class ServiceRequest {
     private Long messageType;
     private String serviceName;
     private String methodName;

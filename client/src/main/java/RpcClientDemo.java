@@ -1,18 +1,18 @@
 import java.util.Scanner;
 
-public class NettyClient {
+public class RpcClientDemo {
 
     private static String host = "127.0.0.1";
     private static int MAX_RETRY = 5;
 
     public static void main(String[] args) {
-        RpcServiceRegistry.register(INotification.class, new INotification() {
+        ServiceRegistry.register(INotification.class, new INotification() {
             @Override
             public void notify(String message) {
                 System.out.println("Notification:"+message);
             }
         });
-        ICalculator calculator = RpcClientBuilder.createRpc(host, 8070, ICalculator.class);
+        ICalculator calculator = ServiceStubBuilder.build(host, 8070, ICalculator.class);
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("a=");
