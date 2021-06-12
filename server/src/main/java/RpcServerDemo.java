@@ -1,14 +1,13 @@
+import cn.bithon.rpc.core.ServiceHost;
+import cn.bithon.rpc.core.example.ICalculator;
+import cn.bithon.rpc.core.example.INotification;
+
 import java.util.Scanner;
 
 public class RpcServerDemo {
     public static void main(String[] args) {
         ServiceHost serviceHost = new ServiceHost()
             .addService(ICalculator.class, new ICalculator() {
-                @Override
-                public int add(int a, int b) {
-                    return a + b;
-                }
-
                 @Override
                 public int div(int a, int b) {
                     return a / b;

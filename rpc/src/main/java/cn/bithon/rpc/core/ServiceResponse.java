@@ -1,3 +1,5 @@
+package cn.bithon.rpc.core;
+
 import lombok.Builder;
 import lombok.Data;
 

@@ -1,3 +1,8 @@
+import cn.bithon.rpc.core.ServiceRegistry;
+import cn.bithon.rpc.core.ServiceStubBuilder;
+import cn.bithon.rpc.core.example.ICalculator;
+import cn.bithon.rpc.core.example.INotification;
+
 import java.util.Scanner;
 
 public class RpcClientDemo {

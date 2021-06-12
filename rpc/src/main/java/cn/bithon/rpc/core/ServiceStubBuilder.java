@@ -1,3 +1,5 @@
+package cn.bithon.rpc.core;
+
 import io.netty.channel.Channel;
 
 import java.lang.reflect.InvocationHandler;

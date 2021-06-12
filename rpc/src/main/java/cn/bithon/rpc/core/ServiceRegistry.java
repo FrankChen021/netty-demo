@@ -1,3 +1,5 @@
+package cn.bithon.rpc.core;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
