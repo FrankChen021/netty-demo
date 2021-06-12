@@ -1,4 +1,4 @@
-package cn.bithon.rpc.core;
+package cn.bithon.rpc.core.message;
 
 public class ServiceMessageType {
     public static final long CLIENT_REQUEST = 1;

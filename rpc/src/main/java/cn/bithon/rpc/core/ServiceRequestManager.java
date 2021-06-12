@@ -1,5 +1,8 @@
 package cn.bithon.rpc.core;
 
+import cn.bithon.rpc.core.message.ServiceException;
+import cn.bithon.rpc.core.message.ServiceMessageType;
+import cn.bithon.rpc.core.message.ServiceRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
