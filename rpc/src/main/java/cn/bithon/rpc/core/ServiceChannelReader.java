@@ -36,6 +36,4 @@ public class ServiceChannelReader extends ChannelInboundHandlerAdapter {
 
         }
     }
-
-
 }

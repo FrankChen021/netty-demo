@@ -45,7 +45,7 @@ public class ServiceStubBuilder {
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) {
-            return requestManager.sendServiceRequest(channelProvider.getChannel(), method, args);
+            return requestManager.invoke(channelProvider.getChannel(), method, args);
         }
     }
 }

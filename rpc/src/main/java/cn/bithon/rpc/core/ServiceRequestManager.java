@@ -16,6 +16,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Manage inflight requests from a service client to a service provider
+ */
 @Slf4j
 public class ServiceRequestManager {
 
@@ -26,7 +29,7 @@ public class ServiceRequestManager {
     }
 
     @Data
-    public static class PendingRequest {
+    static class InflightRequest {
         private String serviceName;
         private String methodName;
         long requestAt;
@@ -38,41 +41,14 @@ public class ServiceRequestManager {
 
     private final AtomicLong transactionId = new AtomicLong();
     private final ObjectMapper om = new JsonMapper();
-    private final Map<Long, PendingRequest> pendingRequests = new ConcurrentHashMap<>();
+    private final Map<Long, InflightRequest> inflightRequests = new ConcurrentHashMap<>();
     private final ThreadLocal<Integer> timeoutSetting = new InheritableThreadLocal<>();
 
     public void setCurrentTimeout(int timeout) {
         timeoutSetting.set(timeout);
     }
 
-    public void onResponse(JsonNode responseNode) {
-        JsonNode transactionId = responseNode.get("transactionId");
-        if (transactionId == null || transactionId.isNull()) {
-            return;
-        }
-
-        long txId = transactionId.asLong();
-        PendingRequest pendingRequest = pendingRequests.get(txId);
-        if (pendingRequest == null) {
-            return;
-        }
-
-        synchronized (pendingRequest) {
-            JsonNode returningNode = responseNode.get("returning");
-            if (returningNode != null && !returningNode.isNull()) {
-                pendingRequest.response = om.convertValue(returningNode, pendingRequest.returnObjType);
-            }
-
-            JsonNode exceptionNode = responseNode.get("exception");
-            if (exceptionNode != null && !exceptionNode.isNull()) {
-                pendingRequest.exception = om.convertValue(exceptionNode, ServiceException.class);
-            }
-
-            pendingRequest.notify();
-        }
-    }
-
-    public Object sendServiceRequest(Channel channel, Method method, Object[] args) {
+    public Object invoke(Channel channel, Method method, Object[] args) {
         ServiceRequest serviceRequest = ServiceRequest.builder()
                                                       .serviceName(method.getDeclaringClass().getSimpleName())
                                                       .methodName(method.getName())
@@ -84,14 +60,14 @@ public class ServiceRequestManager {
 
         Class<?> returnType = method.getReturnType();
         boolean isReturnVoid = returnType.equals(Void.TYPE);
-        PendingRequest pendingRequest = null;
+        InflightRequest pendingRequest = null;
         if (!isReturnVoid) {
-            pendingRequest = new PendingRequest();
+            pendingRequest = new InflightRequest();
             pendingRequest.requestAt = System.currentTimeMillis();
             pendingRequest.methodName = serviceRequest.getMethodName();
             pendingRequest.serviceName = serviceRequest.getServiceName();
             pendingRequest.returnObjType = returnType;
-            this.pendingRequests.put(serviceRequest.getTransactionId(), pendingRequest);
+            this.inflightRequests.put(serviceRequest.getTransactionId(), pendingRequest);
         }
         try {
             channel.writeAndFlush(om.writeValueAsString(serviceRequest));
@@ -113,5 +89,32 @@ public class ServiceRequestManager {
             return pendingRequest.response;
         }
         return null;
+    }
+
+    public void onResponse(JsonNode responseNode) {
+        JsonNode transactionId = responseNode.get("transactionId");
+        if (transactionId == null || transactionId.isNull()) {
+            return;
+        }
+
+        long txId = transactionId.asLong();
+        InflightRequest inflightRequest = inflightRequests.get(txId);
+        if (inflightRequest == null) {
+            return;
+        }
+
+        synchronized (inflightRequest) {
+            JsonNode returningNode = responseNode.get("returning");
+            if (returningNode != null && !returningNode.isNull()) {
+                inflightRequest.response = om.convertValue(returningNode, inflightRequest.returnObjType);
+            }
+
+            JsonNode exceptionNode = responseNode.get("exception");
+            if (exceptionNode != null && !exceptionNode.isNull()) {
+                inflightRequest.exception = om.convertValue(exceptionNode, ServiceException.class);
+            }
+
+            inflightRequest.notify();
+        }
     }
 }
