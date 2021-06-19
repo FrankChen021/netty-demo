@@ -12,6 +12,15 @@ public class RpcServerDemo {
                 public int div(int a, int b) {
                     return a / b;
                 }
+
+                @Override
+                public int block(int timeout) {
+                    try {
+                        Thread.sleep(timeout * 1000);
+                    } catch (InterruptedException e) {
+                    }
+                    return 0;
+                }
             }).start(8070);
 
 
