@@ -18,7 +18,10 @@ public class RpcClientDemo {
                 System.out.println("Notification:" + message);
             }
         });
-        ICalculator calculator = ServiceStubBuilder.create(new ClientChannelProvider(host, 8070), ICalculator.class);
+
+        ClientChannelProvider channelProvider = new ClientChannelProvider(host, 8070);
+        //channelProvider.debug(true);
+        ICalculator calculator = ServiceStubBuilder.create(channelProvider, ICalculator.class);
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("a=");

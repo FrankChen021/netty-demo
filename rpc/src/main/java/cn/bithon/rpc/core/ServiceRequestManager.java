@@ -1,5 +1,6 @@
 package cn.bithon.rpc.core;
 
+import cn.bithon.rpc.core.channel.IServiceChannelProvider;
 import cn.bithon.rpc.core.exception.ServiceInvocationException;
 import cn.bithon.rpc.core.exception.TimeoutException;
 import cn.bithon.rpc.core.message.ServiceException;
@@ -55,7 +56,19 @@ public class ServiceRequestManager {
         timeoutSetting.set(timeout);
     }
 
-    public Object invoke(Channel channel, Method method, Object[] args) {
+    public Object invoke(IServiceChannelProvider channelProvider, Method method, Object[] args) {
+        Channel ch = channelProvider.getChannel();
+        if (ch == null) {
+            throw new ServiceInvocationException("Failed to invoke %s#%s due to channel is empty",
+                                                 method.getDeclaringClass().getSimpleName(),
+                                                 method.getName());
+        }
+        if (!ch.isActive()) {
+            throw new ServiceInvocationException("Failed to invoke %s#%s due to channel is not active",
+                                                 method.getDeclaringClass().getSimpleName(),
+                                                 method.getName());
+        }
+
         ServiceRequest serviceRequest = ServiceRequest.builder()
                                                       .serviceName(method.getDeclaringClass().getSimpleName())
                                                       .methodName(method.getName())
@@ -63,8 +76,6 @@ public class ServiceRequestManager {
                                                       .messageType(ServiceMessageType.CLIENT_REQUEST)
                                                       .args(args)
                                                       .build();
-        log.info("sending client request:{}", serviceRequest);
-
         Class<?> returnType = method.getReturnType();
         boolean isReturnVoid = returnType.equals(Void.TYPE);
         InflightRequest inflightRequest = null;
@@ -77,7 +88,7 @@ public class ServiceRequestManager {
             this.inflightRequests.put(serviceRequest.getTransactionId(), inflightRequest);
         }
         try {
-            channel.writeAndFlush(om.writeValueAsString(serviceRequest));
+            channelProvider.writeAndFlush(om.writeValueAsString(serviceRequest));
         } catch (JsonProcessingException e) {
             throw new ServiceInvocationException("Failed to serialize service request due to: %s", e.getMessage());
         }

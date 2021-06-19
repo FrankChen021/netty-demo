@@ -38,18 +38,7 @@ public class ServiceStubBuilder {
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) {
-            Channel ch = channelProvider.getChannel();
-            if (ch == null) {
-                throw new ServiceInvocationException("Failed to invoke %s#%s due to channel is empty",
-                                                     method.getDeclaringClass().getSimpleName(),
-                                                     method.getName());
-            }
-            if (!ch.isActive()) {
-                throw new ServiceInvocationException("Failed to invoke %s#%s due to channel is not active",
-                                                     method.getDeclaringClass().getSimpleName(),
-                                                     method.getName());
-            }
-            return requestManager.invoke(ch, method, args);
+            return requestManager.invoke(channelProvider, method, args);
         }
     }
 }

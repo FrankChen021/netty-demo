@@ -15,11 +15,14 @@ import java.io.IOException;
 @Slf4j
 public class ServiceChannelReader extends ChannelInboundHandlerAdapter {
 
+    private boolean channelDebugEnabled;
     private final ObjectMapper om = new JsonMapper();
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        log.info("receiving: {}", msg);
+        if (channelDebugEnabled) {
+            log.info("receiving: {}", msg);
+        }
 
         try {
             JsonNode messageJsonNode = om.readTree(msg.toString());
@@ -36,5 +39,13 @@ public class ServiceChannelReader extends ChannelInboundHandlerAdapter {
             }
         } catch (IOException e) {
         }
+    }
+
+    public boolean isChannelDebugEnabled() {
+        return channelDebugEnabled;
+    }
+
+    public void setChannelDebugEnabled(boolean channelDebugEnabled) {
+        this.channelDebugEnabled = channelDebugEnabled;
     }
 }

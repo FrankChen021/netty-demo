@@ -29,9 +29,11 @@ public class ClientChannelProvider implements IServiceChannelProvider {
     private final Bootstrap bootstrap;
     private final IEndPointProvider endPointProvider;
     private final int maxRetry;
+    private final ServiceChannelReader channelReader;
     private NioEventLoopGroup bossGroup;
     private Channel channel;
     private boolean isConnecting = false;
+    private boolean channelDebugSwitch;
 
     public ClientChannelProvider(String host, int port) {
         this(host, port, MAX_RETRY);
@@ -45,6 +47,7 @@ public class ClientChannelProvider implements IServiceChannelProvider {
         this.endPointProvider = endPointProvider;
         this.maxRetry = maxRetry;
 
+        channelReader = new ServiceChannelReader();
         bossGroup = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
         bootstrap.group(bossGroup)
@@ -56,7 +59,7 @@ public class ClientChannelProvider implements IServiceChannelProvider {
                          ch.pipeline().addLast("decoder", new StringDecoder());
                          ch.pipeline().addLast("encoder", new StringEncoder());
                          ch.pipeline().addLast(new ClientChannelManager());
-                         ch.pipeline().addLast(new ServiceChannelReader());
+                         ch.pipeline().addLast(channelReader);
                      }
                  });
     }
@@ -64,6 +67,20 @@ public class ClientChannelProvider implements IServiceChannelProvider {
     @Override
     public Channel getChannel() {
         return channel;
+    }
+
+    @Override
+    public void writeAndFlush(Object obj) {
+        if ( channelDebugSwitch ) {
+            log.info("sending to server: {}", obj);
+        }
+        channel.writeAndFlush(obj);
+    }
+
+    @Override
+    public void debug(boolean on) {
+        this.channelReader.setChannelDebugEnabled(on);
+        this.channelDebugSwitch = on;
     }
 
     public void connect() {
