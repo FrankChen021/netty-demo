@@ -17,7 +17,7 @@ public class RpcClientDemo {
                 System.out.println("Notification:"+message);
             }
         });
-        ICalculator calculator = ServiceStubBuilder.build(host, 8070, ICalculator.class);
+        ICalculator calculator = ServiceStubBuilder.create(host, 8070, ICalculator.class);
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("a=");

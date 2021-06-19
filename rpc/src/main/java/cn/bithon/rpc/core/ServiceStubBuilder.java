@@ -1,7 +1,5 @@
 package cn.bithon.rpc.core;
 
-import io.netty.channel.Channel;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -13,7 +11,7 @@ public class ServiceStubBuilder {
     private static final Map<String, ClientConnection> connections = new ConcurrentHashMap<>();
 
     @SuppressWarnings("unchecked")
-    public static <T extends IService> T build(String host, int port, Class<T> serviceInterface) {
+    public static <T extends IService> T create(String host, int port, Class<T> serviceInterface) {
         String remoteEndpoint = host + ":" + port;
 
         ClientConnection connection = connections.computeIfAbsent(remoteEndpoint, (key) -> {
@@ -22,17 +20,14 @@ public class ServiceStubBuilder {
             return serviceConnection;
         });
 
-        return (T) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-                                          new Class[]{serviceInterface},
-                                          new ServiceInvocationHandler(connection,
-                                                                       ServiceRequestManager.getInstance()));
+        return create(connection, serviceInterface);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends IService> T build(Channel channel, Class<T> serviceInterface) {
+    public static <T extends IService> T create(IServiceChannelProvider channelProvider, Class<T> serviceInterface) {
         return (T) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
                                           new Class[]{serviceInterface},
-                                          new ServiceInvocationHandler(() -> channel,
+                                          new ServiceInvocationHandler(channelProvider,
                                                                        ServiceRequestManager.getInstance()));
     }
 

@@ -95,7 +95,7 @@ public class ServiceHost {
         }
 
         return (T) clientService.services.computeIfAbsent(serviceClass,
-                                                          key -> ServiceStubBuilder.build(clientService.channel,
-                                                                                          serviceClass));
+                                                          key -> ServiceStubBuilder.create(() -> clientService.channel,
+                                                                                           serviceClass));
     }
 }
