@@ -1,6 +1,7 @@
 package cn.bithon.rpc.invocation;
 
-import cn.bithon.rpc.channel.IServiceChannel;
+import cn.bithon.rpc.channel.IChannelConnectable;
+import cn.bithon.rpc.channel.IChannelWriter;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.exception.TimeoutException;
 import cn.bithon.rpc.message.ServiceException;
@@ -51,8 +52,11 @@ public class ServiceRequestManager {
     private final ObjectMapper om = new JsonMapper();
     private final Map<Long, InflightRequest> inflightRequests = new ConcurrentHashMap<>();
 
-    public Object invoke(IServiceChannel channelProvider, boolean debug, long timeout, Method method, Object[] args) {
-        Channel ch = channelProvider.getChannel();
+    public Object invoke(IChannelWriter channelWriter, boolean debug, long timeout, Method method, Object[] args) {
+        if (channelWriter instanceof IChannelConnectable) {
+            ((IChannelConnectable)channelWriter).connect();
+        }
+        Channel ch = channelWriter.getChannel();
         if (ch == null) {
             throw new ServiceInvocationException("Failed to invoke %s#%s due to channel is empty",
                                                  method.getDeclaringClass().getSimpleName(),
@@ -87,10 +91,11 @@ public class ServiceRequestManager {
             if (debug) {
                 log.info("[DEBUGGING] Sending message: {}", message);
             }
-            channelProvider.writeAndFlush(message);
+            channelWriter.writeAndFlush(message);
         } catch (JsonProcessingException e) {
             throw new ServiceInvocationException("Failed to serialize service request due to: %s", e.getMessage());
         }
+
         if (inflightRequest != null) {
             try {
                 synchronized (inflightRequest) {

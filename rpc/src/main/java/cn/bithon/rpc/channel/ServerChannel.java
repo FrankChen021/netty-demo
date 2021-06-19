@@ -20,19 +20,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ServerChannelManager {
+public class ServerChannel {
 
     private final NioEventLoopGroup bossGroup = new NioEventLoopGroup();
     private final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
     private final ServiceRegistry serviceRegistry = new ServiceRegistry();
 
-    public <T extends IService> ServerChannelManager addService(Class<T> interfaceClass, T impl) {
+    public <T extends IService> ServerChannel addService(Class<T> interfaceClass, T impl) {
         serviceRegistry.addService(interfaceClass, impl);
         return this;
     }
 
-    public ServerChannelManager start(int port) {
+    public ServerChannel start(int port) {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap
             .group(bossGroup, workerGroup)
@@ -48,7 +48,7 @@ public class ServerChannelManager {
                 protected void initChannel(NioSocketChannel ch) {
                     ch.pipeline().addLast("decoder", new StringDecoder(CharsetUtil.UTF_8));
                     ch.pipeline().addLast("encoder", new StringEncoder(CharsetUtil.UTF_8));
-                    ch.pipeline().addLast(new ServiceChannelReader(serviceRegistry));
+                    ch.pipeline().addLast(new ChannelReader(serviceRegistry));
                     ch.pipeline().addLast(new ClientServiceManager());
                 }
             });
@@ -109,7 +109,7 @@ public class ServerChannelManager {
         }
 
         return (T) clientService.services.computeIfAbsent(serviceClass,
-                                                          key -> ServiceStubFactory.create(new IServiceChannel() {
+                                                          key -> ServiceStubFactory.create(new IChannelWriter() {
                                                                                                @Override
                                                                                                public Channel getChannel() {
                                                                                                    return clientService.channel;

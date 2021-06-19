@@ -1,4 +1,4 @@
-import cn.bithon.rpc.channel.ServerChannelManager;
+import cn.bithon.rpc.channel.ServerChannel;
 import cn.bithon.rpc.example.ICalculator;
 import cn.bithon.rpc.example.INotification;
 
@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class RpcServerDemo {
     public static void main(String[] args) {
-        ServerChannelManager serverChannelManager = new ServerChannelManager()
+        ServerChannel serverChannel = new ServerChannel()
             .addService(ICalculator.class, new ICalculator() {
 
                 @Override
@@ -29,12 +29,12 @@ public class RpcServerDemo {
         while (true) {
             String line = scanner.nextLine();
             if ("stop".equals(line)) {
-                serverChannelManager.shutdown();
+                serverChannel.shutdown();
                 break;
             }
 
-            for (String clientEndpoint : serverChannelManager.getClientEndpoints()) {
-                INotification notification = serverChannelManager.getRemoteService(clientEndpoint, INotification.class);
+            for (String clientEndpoint : serverChannel.getClientEndpoints()) {
+                INotification notification = serverChannel.getRemoteService(clientEndpoint, INotification.class);
                 notification.notify(line);
             }
         }

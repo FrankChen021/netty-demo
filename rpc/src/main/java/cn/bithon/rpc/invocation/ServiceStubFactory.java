@@ -1,7 +1,7 @@
 package cn.bithon.rpc.invocation;
 
 import cn.bithon.rpc.IService;
-import cn.bithon.rpc.channel.IServiceChannel;
+import cn.bithon.rpc.channel.IChannelWriter;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -26,22 +26,22 @@ public class ServiceStubFactory {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends IService> T create(IServiceChannel channelProvider, Class<T> serviceInterface) {
+    public static <T extends IService> T create(IChannelWriter channelWriter, Class<T> serviceInterface) {
         return (T) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
                                           new Class[]{serviceInterface, IServiceInvoker.class},
-                                          new ServiceInvocationHandler(channelProvider,
+                                          new ServiceInvocationHandler(channelWriter,
                                                                        ServiceRequestManager.getInstance()));
     }
 
     static class ServiceInvocationHandler implements InvocationHandler {
-        private final IServiceChannel channelProvider;
+        private final IChannelWriter channelWriter;
         private final ServiceRequestManager requestManager;
         private boolean debugEnabled;
         private long timeout = 5000;
 
-        public ServiceInvocationHandler(IServiceChannel channelProvider,
+        public ServiceInvocationHandler(IChannelWriter channelWriter,
                                         ServiceRequestManager requestManager) {
-            this.channelProvider = channelProvider;
+            this.channelWriter = channelWriter;
             this.requestManager = requestManager;
         }
 
@@ -62,7 +62,7 @@ public class ServiceStubFactory {
                 return proxy;
             }
 
-            return requestManager.invoke(channelProvider, debugEnabled, timeout, method, args);
+            return requestManager.invoke(channelWriter, debugEnabled, timeout, method, args);
         }
     }
 }

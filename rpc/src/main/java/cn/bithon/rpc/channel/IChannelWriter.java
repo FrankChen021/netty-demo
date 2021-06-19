@@ -2,7 +2,7 @@ package cn.bithon.rpc.channel;
 
 import io.netty.channel.Channel;
 
-public interface IServiceChannel {
+public interface IChannelWriter {
 
     /**
      * get underlying channel object

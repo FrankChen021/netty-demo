@@ -16,17 +16,17 @@ import java.io.IOException;
 
 @Slf4j
 @ChannelHandler.Sharable
-public class ServiceChannelReader extends ChannelInboundHandlerAdapter {
+public class ChannelReader extends ChannelInboundHandlerAdapter {
 
     private final ServiceInvocationDispatcher serviceInvocationDispatcher;
     private boolean channelDebugEnabled;
     private final ObjectMapper om = new JsonMapper();
 
-    public ServiceChannelReader(ServiceRegistry serviceRegistry) {
+    public ChannelReader(ServiceRegistry serviceRegistry) {
         this.serviceInvocationDispatcher = new ServiceInvocationDispatcher(serviceRegistry);
     }
 
-    public ServiceChannelReader(ServiceInvocationDispatcher serviceInvocationDispatcher) {
+    public ChannelReader(ServiceInvocationDispatcher serviceInvocationDispatcher) {
         this.serviceInvocationDispatcher = serviceInvocationDispatcher;
     }
 

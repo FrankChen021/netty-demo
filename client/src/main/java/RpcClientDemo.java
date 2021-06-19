@@ -1,28 +1,30 @@
-import cn.bithon.rpc.channel.ClientChannelProvider;
+import cn.bithon.rpc.channel.ClientChannel;
 import cn.bithon.rpc.example.ICalculator;
 import cn.bithon.rpc.example.INotification;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.invocation.ServiceStubFactory;
 
+import java.time.Duration;
 import java.util.Scanner;
 
 public class RpcClientDemo {
 
-    private static String host = "127.0.0.1";
-    private static int MAX_RETRY = 5;
+    private static final String host = "127.0.0.1";
+    private static final int MAX_RETRY = 5;
 
     public static void main(String[] args) {
 
-        ClientChannelProvider channelProvider = new ClientChannelProvider(host, 8070)
+        ClientChannel channelProvider = new ClientChannel(host, 8070)
             .bindService(INotification.class,
                          new INotification() {
-                            @Override
-                            public void notify(String message) {
-                                System.out.println(
-                                    "Notification:"
-                                    + message);
-                            }
-                        });
+                             @Override
+                             public void notify(String message) {
+                                 System.out.println(
+                                     "Notification:"
+                                     + message);
+                             }
+                         })
+            .configureRetry(60, Duration.ofMillis(500));
 
         //channelProvider.debug(true);
         ICalculator calculator = ServiceStubFactory.create(channelProvider, ICalculator.class);
