@@ -1,3 +1,4 @@
+import cn.bithon.rpc.core.ClientChannelProvider;
 import cn.bithon.rpc.core.ServiceRegistry;
 import cn.bithon.rpc.core.ServiceStubBuilder;
 import cn.bithon.rpc.core.example.ICalculator;
@@ -14,10 +15,10 @@ public class RpcClientDemo {
         ServiceRegistry.register(INotification.class, new INotification() {
             @Override
             public void notify(String message) {
-                System.out.println("Notification:"+message);
+                System.out.println("Notification:" + message);
             }
         });
-        ICalculator calculator = ServiceStubBuilder.create(host, 8070, ICalculator.class);
+        ICalculator calculator = ServiceStubBuilder.create(new ClientChannelProvider(host, 8070), ICalculator.class);
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("a=");
@@ -26,11 +27,13 @@ public class RpcClientDemo {
             int b = scanner.nextInt();
 
             long s = System.currentTimeMillis();
-            for(int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 1000; i++) {
                 int c = calculator.div(a, b);
             }
             long e = System.currentTimeMillis();
-            System.out.printf("time=%d", e-s);
+            System.out.printf("time=%d", e - s);
+
+
         }
     }
 }
