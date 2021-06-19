@@ -16,7 +16,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
 import java.util.concurrent.Executor;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -31,13 +32,40 @@ public class ServiceInvocationDispatcher {
 
     private final Executor executor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() - 1,
                                                              50,
-                                                             60L,
-                                                             TimeUnit.SECONDS,
-                                                             new SynchronousQueue<>());
+                                                             0L, TimeUnit.MILLISECONDS,
+                                                             new LinkedBlockingQueue<>(),
+                                                             new RejectHandler());
     private final ObjectMapper om = new ObjectMapper();
 
     public void dispatch(Channel channel, JsonNode messageNode) {
         executor.execute(new Invoker(om, channel, messageNode));
+    }
+
+    static class RejectHandler implements RejectedExecutionHandler {
+        @Override
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+            Invoker invoker = (Invoker) r;
+
+            JsonNode txIdNode = invoker.messageNode.get("transactionId");
+            if (txIdNode != null && !txIdNode.isNull()) {
+                long txId = txIdNode.asLong();
+                sendResponse(invoker.channel, invoker.om, ServiceResponse.builder()
+                                                                         .messageType(ServiceMessageType.SERVER_RESPONSE)
+                                                                         .serverResponseAt(System.currentTimeMillis())
+                                                                         .transactionId(txId)
+                                                                         .exception(new ServiceException(
+                                                                             "Server has no enough resources to process the request."))
+                                                                         .build());
+            }
+        }
+    }
+
+    static void sendResponse(Channel channel, ObjectMapper om, ServiceResponse serviceResponse) {
+        try {
+            channel.writeAndFlush(om.writeValueAsString(serviceResponse));
+        } catch (IOException e) {
+            log.error(String.format("Exception sending RPC response(%s)", serviceResponse), e);
+        }
     }
 
     @AllArgsConstructor
@@ -122,11 +150,7 @@ public class ServiceInvocationDispatcher {
         }
 
         private void sendResponse(ServiceResponse serviceResponse) {
-            try {
-                channel.writeAndFlush(om.writeValueAsString(serviceResponse));
-            } catch (IOException e) {
-                log.error(String.format("Exception sending RPC response(%s)", serviceResponse), e);
-            }
+            ServiceInvocationDispatcher.sendResponse(channel, om, serviceResponse);
         }
 
         private Object[] parseArgs(String serviceName, String methodName, Parameter[] parameters)

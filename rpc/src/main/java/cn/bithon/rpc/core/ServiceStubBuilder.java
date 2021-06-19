@@ -14,7 +14,7 @@ public class ServiceStubBuilder {
     @SuppressWarnings("unchecked")
     public static <T extends IService> T create(ClientChannelProvider channelProvider, Class<T> serviceInterface) {
         channelProvider.connect();
-        return create(channelProvider, serviceInterface);
+        return create((IServiceChannelProvider) channelProvider, serviceInterface);
     }
 
     @SuppressWarnings("unchecked")
