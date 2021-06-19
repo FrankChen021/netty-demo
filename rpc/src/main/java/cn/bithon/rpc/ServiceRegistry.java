@@ -1,35 +1,69 @@
 package cn.bithon.rpc;
 
+import cn.bithon.rpc.message.ServiceObjectArg;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceRegistry {
 
-    private static final Map<String, RpcServiceProvider> registry = new ConcurrentHashMap<>();
+    private final Map<String, RpcServiceProvider> registry = new ConcurrentHashMap<>();
 
-    public static <T extends IService> void register(Class<T> interfaceType, T impl) {
+    public <T extends IService> void addService(Class<T> serviceType, T serviceImpl) {
         // override methods are not supported
-        for (Method method : interfaceType.getDeclaredMethods()) {
-            registry.put(interfaceType.getSimpleName() + "#" + method.getName(), new RpcServiceProvider(method, impl));
+        for (Method method : serviceType.getDeclaredMethods()) {
+            registry.put(serviceType.getSimpleName() + "#" + method.getName(), new RpcServiceProvider(method,
+                                                                                                      serviceImpl));
         }
     }
 
-    public static RpcServiceProvider findServiceProvider(String serviceName, String methodName) {
+    public RpcServiceProvider findServiceProvider(String serviceName, String methodName) {
         return registry.get(serviceName + "#" + methodName);
+    }
+
+    public static class ParameterType {
+        private final Class<?> rawType;
+        private final Class<?> messageType;
+
+        public ParameterType(Class<?> rawType, Class<?> messageType) {
+            this.rawType = rawType;
+            this.messageType = messageType;
+        }
+
+        public Class<?> getRawType() {
+            return rawType;
+        }
+
+        public Class<?> getMessageType() {
+            return messageType;
+        }
+
+        public boolean isProxyType() {
+            return !messageType.equals(rawType);
+        }
     }
 
     public static class RpcServiceProvider {
         private final Method method;
         private final Object serviceImpl;
         private final boolean isReturnVoid;
+        private final ParameterType[] parameterTypes;
 
         public RpcServiceProvider(Method method, Object serviceImpl) {
             this.method = method;
             this.serviceImpl = serviceImpl;
-            isReturnVoid = method.getReturnType().equals(Void.TYPE);
+            this.isReturnVoid = method.getReturnType().equals(Void.TYPE);
+            this.parameterTypes = new ParameterType[method.getParameterCount()];
+
+            Class<?>[] parameterRawTypes = method.getParameterTypes();
+            for (int i = 0; i < parameterRawTypes.length; i++) {
+                parameterTypes[i] = new ParameterType(parameterRawTypes[i],
+                                                      IService.isService(parameterRawTypes[i])
+                                                      ? ServiceObjectArg.class
+                                                      : parameterRawTypes[i]);
+            }
         }
 
         public Object invoke(Object[] args) throws InvocationTargetException, IllegalAccessException {
@@ -40,8 +74,8 @@ public class ServiceRegistry {
             return isReturnVoid;
         }
 
-        public Parameter[] getParameters() {
-            return method.getParameters();
+        public ParameterType[] getParameterTypes() {
+            return parameterTypes;
         }
     }
 }

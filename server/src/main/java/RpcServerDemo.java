@@ -8,6 +8,7 @@ public class RpcServerDemo {
     public static void main(String[] args) {
         ServerChannelManager serverChannelManager = new ServerChannelManager()
             .addService(ICalculator.class, new ICalculator() {
+
                 @Override
                 public int div(int a, int b) {
                     return a / b;
@@ -16,7 +17,7 @@ public class RpcServerDemo {
                 @Override
                 public int block(int timeout) {
                     try {
-                        Thread.sleep(timeout * 1000);
+                        Thread.sleep(timeout * 1000L);
                     } catch (InterruptedException e) {
                     }
                     return 0;
@@ -33,7 +34,7 @@ public class RpcServerDemo {
             }
 
             for (String clientEndpoint : serverChannelManager.getClientEndpoints()) {
-                INotification notification = serverChannelManager.getServiceStub(clientEndpoint, INotification.class);
+                INotification notification = serverChannelManager.getRemoteService(clientEndpoint, INotification.class);
                 notification.notify(line);
             }
         }

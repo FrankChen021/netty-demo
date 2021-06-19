@@ -1,4 +1,3 @@
-import cn.bithon.rpc.ServiceRegistry;
 import cn.bithon.rpc.channel.ClientChannelProvider;
 import cn.bithon.rpc.example.ICalculator;
 import cn.bithon.rpc.example.INotification;
@@ -13,14 +12,18 @@ public class RpcClientDemo {
     private static int MAX_RETRY = 5;
 
     public static void main(String[] args) {
-        ServiceRegistry.register(INotification.class, new INotification() {
-            @Override
-            public void notify(String message) {
-                System.out.println("Notification:" + message);
-            }
-        });
 
-        ClientChannelProvider channelProvider = new ClientChannelProvider(host, 8070);
+        ClientChannelProvider channelProvider = new ClientChannelProvider(host, 8070)
+            .bindService(INotification.class,
+                         new INotification() {
+                            @Override
+                            public void notify(String message) {
+                                System.out.println(
+                                    "Notification:"
+                                    + message);
+                            }
+                        });
+
         //channelProvider.debug(true);
         ICalculator calculator = ServiceStubBuilder.create(channelProvider, ICalculator.class);
         Scanner scanner = new Scanner(System.in);

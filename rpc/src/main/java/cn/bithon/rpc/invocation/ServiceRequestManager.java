@@ -1,6 +1,6 @@
 package cn.bithon.rpc.invocation;
 
-import cn.bithon.rpc.channel.IServiceChannelProvider;
+import cn.bithon.rpc.channel.IServiceChannel;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.exception.TimeoutException;
 import cn.bithon.rpc.message.ServiceException;
@@ -50,13 +50,8 @@ public class ServiceRequestManager {
     private final AtomicLong transactionId = new AtomicLong();
     private final ObjectMapper om = new JsonMapper();
     private final Map<Long, InflightRequest> inflightRequests = new ConcurrentHashMap<>();
-    private final ThreadLocal<Integer> timeoutSetting = new InheritableThreadLocal<>();
 
-    public void setCurrentTimeout(int timeout) {
-        timeoutSetting.set(timeout);
-    }
-
-    public Object invoke(IServiceChannelProvider channelProvider, Method method, Object[] args) {
+    public Object invoke(IServiceChannel channelProvider, boolean debug, long timeout, Method method, Object[] args) {
         Channel ch = channelProvider.getChannel();
         if (ch == null) {
             throw new ServiceInvocationException("Failed to invoke %s#%s due to channel is empty",
@@ -94,9 +89,8 @@ public class ServiceRequestManager {
         }
         if (inflightRequest != null) {
             try {
-                Integer timeout = timeoutSetting.get();
                 synchronized (inflightRequest) {
-                    inflightRequest.wait(timeout == null ? 5000 : timeout);
+                    inflightRequest.wait(timeout);
                 }
             } catch (InterruptedException e) {
                 inflightRequests.remove(serviceRequest.getTransactionId());

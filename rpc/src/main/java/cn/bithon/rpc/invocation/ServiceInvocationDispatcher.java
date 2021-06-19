@@ -1,6 +1,8 @@
 package cn.bithon.rpc.invocation;
 
+import cn.bithon.rpc.IService;
 import cn.bithon.rpc.ServiceRegistry;
+import cn.bithon.rpc.channel.DefaultChannelProvider;
 import cn.bithon.rpc.exception.BadRequestException;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.message.ServiceException;
@@ -15,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Parameter;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -25,11 +26,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ServiceInvocationDispatcher {
 
-    private static final ServiceInvocationDispatcher INSTANCE = new ServiceInvocationDispatcher();
-
-    public static ServiceInvocationDispatcher getInstance() {
-        return INSTANCE;
-    }
+    private final ServiceRegistry serviceRegistry;
 
     private final Executor executor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() - 1,
                                                              50,
@@ -38,8 +35,12 @@ public class ServiceInvocationDispatcher {
                                                              new RejectHandler());
     private final ObjectMapper om = new ObjectMapper();
 
+    public ServiceInvocationDispatcher(ServiceRegistry serviceRegistry) {
+        this.serviceRegistry = serviceRegistry;
+    }
+
     public void dispatch(Channel channel, JsonNode messageNode) {
-        executor.execute(new Invoker(om, channel, messageNode));
+        executor.execute(new Invoker(om, channel, messageNode, serviceRegistry));
     }
 
     static class RejectHandler implements RejectedExecutionHandler {
@@ -74,6 +75,7 @@ public class ServiceInvocationDispatcher {
         private final ObjectMapper om;
         private final Channel channel;
         private final JsonNode messageNode;
+        private final ServiceRegistry serviceRegistry;
 
         @Override
         public void run() {
@@ -99,14 +101,14 @@ public class ServiceInvocationDispatcher {
 
                 String serviceName = serviceNameNode.asText();
                 String methodName = methodNameNode.asText();
-                ServiceRegistry.RpcServiceProvider serviceProvider = ServiceRegistry.findServiceProvider(
+                ServiceRegistry.RpcServiceProvider serviceProvider = serviceRegistry.findServiceProvider(
                     serviceName,
                     methodName);
                 if (serviceProvider == null) {
                     throw new BadRequestException("Can't find service provider %s#%s", serviceName, methodName);
                 }
 
-                Object[] inputArgs = parseArgs(serviceName, methodName, serviceProvider.getParameters());
+                Object[] inputArgs = parseArgs(serviceName, methodName, serviceProvider.getParameterTypes());
 
                 Object ret;
                 try {
@@ -154,11 +156,13 @@ public class ServiceInvocationDispatcher {
             ServiceInvocationDispatcher.sendResponse(channel, om, serviceResponse);
         }
 
-        private Object[] parseArgs(String serviceName, String methodName, Parameter[] parameters)
+        private Object[] parseArgs(String serviceName,
+                                   String methodName,
+                                   ServiceRegistry.ParameterType[] parameterTypes)
             throws BadRequestException {
 
-            Object[] inputArgs = new Object[parameters.length];
-            if (parameters.length <= 0) {
+            Object[] inputArgs = new Object[parameterTypes.length];
+            if (parameterTypes.length <= 0) {
                 return inputArgs;
             }
 
@@ -172,20 +176,28 @@ public class ServiceInvocationDispatcher {
             }
 
             ArrayNode argsArrayNode = (ArrayNode) argsNode;
-            if (argsArrayNode.size() != parameters.length) {
+            if (argsArrayNode.size() != parameterTypes.length) {
                 throw new BadRequestException(
                     "Bad args for %s#%s, expected %d parameters, but provided %d parameters",
                     serviceName,
                     methodName,
-                    parameters.length,
+                    parameterTypes.length,
                     argsArrayNode.size());
             }
 
-            for (int i = 0; i < parameters.length; i++) {
+            for (int i = 0; i < parameterTypes.length; i++) {
                 JsonNode inputArgNode = argsArrayNode.get(i);
                 if (inputArgNode != null && !inputArgNode.isNull()) {
                     try {
-                        inputArgs[i] = om.convertValue(inputArgNode, parameters[i].getType());
+                        inputArgs[i] = om.convertValue(inputArgNode, parameterTypes[i].getMessageType());
+                        if (parameterTypes[i].isProxyType()) {
+                            //
+                            //generate a proxy object
+                            //
+                            //noinspection unchecked
+                            inputArgs[i] = ServiceStubBuilder.create(new DefaultChannelProvider(channel),
+                                                                     (Class<? extends IService>) parameterTypes[i].getRawType());
+                        }
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad args for %s#%s at %d: %s",
                                                       serviceName,

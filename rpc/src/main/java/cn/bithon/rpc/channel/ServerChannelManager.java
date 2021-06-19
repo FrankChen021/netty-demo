@@ -25,8 +25,10 @@ public class ServerChannelManager {
     private final NioEventLoopGroup bossGroup = new NioEventLoopGroup();
     private final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
+    private final ServiceRegistry serviceRegistry = new ServiceRegistry();
+
     public <T extends IService> ServerChannelManager addService(Class<T> interfaceClass, T impl) {
-        ServiceRegistry.register(interfaceClass, impl);
+        serviceRegistry.addService(interfaceClass, impl);
         return this;
     }
 
@@ -46,12 +48,15 @@ public class ServerChannelManager {
                 protected void initChannel(NioSocketChannel ch) {
                     ch.pipeline().addLast("decoder", new StringDecoder(CharsetUtil.UTF_8));
                     ch.pipeline().addLast("encoder", new StringEncoder(CharsetUtil.UTF_8));
-                    ch.pipeline().addLast(new ServiceChannelReader());
+                    ch.pipeline().addLast(new ServiceChannelReader(serviceRegistry));
                     ch.pipeline().addLast(new ClientServiceManager());
                 }
             });
-        serverBootstrap.bind(port);
-
+        try {
+            serverBootstrap.bind(port).sync();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return this;
     }
 
@@ -97,14 +102,14 @@ public class ServerChannelManager {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends IService> T getServiceStub(String clientEndpoint, Class<T> serviceClass) {
+    public <T extends IService> T getRemoteService(String clientEndpoint, Class<T> serviceClass) {
         ClientService clientService = clientServices.get(clientEndpoint);
         if (clientService == null) {
             return null;
         }
 
         return (T) clientService.services.computeIfAbsent(serviceClass,
-                                                          key -> ServiceStubBuilder.create(new IServiceChannelProvider() {
+                                                          key -> ServiceStubBuilder.create(new IServiceChannel() {
                                                                                                @Override
                                                                                                public Channel getChannel() {
                                                                                                    return clientService.channel;
@@ -113,11 +118,6 @@ public class ServerChannelManager {
                                                                                                @Override
                                                                                                public void writeAndFlush(Object obj) {
                                                                                                    clientService.channel.writeAndFlush(obj);
-                                                                                               }
-
-                                                                                               @Override
-                                                                                               public void debug(boolean on) {
-
                                                                                                }
                                                                                            },
                                                                                            serviceClass));
