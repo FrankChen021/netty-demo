@@ -52,7 +52,7 @@ public class ServiceHost {
         return this;
     }
 
-    public void stop() {
+    public void shutdown() {
         try {
             bossGroup.shutdownGracefully().sync();
         } catch (InterruptedException ignored) {

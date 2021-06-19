@@ -19,7 +19,7 @@ public class RpcServerDemo {
         while (true) {
             String line = scanner.nextLine();
             if ("stop".equals(line)) {
-                serviceHost.stop();
+                serviceHost.shutdown();
                 break;
             }
 

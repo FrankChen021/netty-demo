@@ -1,5 +1,7 @@
 package cn.bithon.rpc.core;
 
+import cn.bithon.rpc.core.endpoint.IEndPointProvider;
+import cn.bithon.rpc.core.endpoint.SingleEndPointProvider;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -25,8 +27,7 @@ public class ClientChannelProvider implements IServiceChannelProvider {
 
     public static final int MAX_RETRY = 30;
     private final Bootstrap bootstrap;
-    private final String host;
-    private final int port;
+    private final IEndPointProvider endPointProvider;
     private final int maxRetry;
     private NioEventLoopGroup bossGroup;
     private Channel channel;
@@ -37,8 +38,11 @@ public class ClientChannelProvider implements IServiceChannelProvider {
     }
 
     public ClientChannelProvider(String host, int port, int maxRetry) {
-        this.host = host;
-        this.port = port;
+        this(new SingleEndPointProvider(host, port), maxRetry);
+    }
+
+    public ClientChannelProvider(IEndPointProvider endPointProvider, int maxRetry) {
+        this.endPointProvider = endPointProvider;
         this.maxRetry = maxRetry;
 
         bossGroup = new NioEventLoopGroup();
@@ -63,7 +67,7 @@ public class ClientChannelProvider implements IServiceChannelProvider {
     }
 
     public void connect() {
-        if ( bossGroup == null ) {
+        if (bossGroup == null) {
             throw new IllegalStateException("client channel has been shutdown");
         }
         if (channel == null || !isConnecting) {
@@ -74,28 +78,30 @@ public class ClientChannelProvider implements IServiceChannelProvider {
     public void shutdown() {
         try {
             bossGroup.shutdownGracefully().sync();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         }
         bossGroup = null;
     }
 
     private void doConnect(int maxRetry) {
         isConnecting = true;
-        bootstrap.connect(host, port).addListener((ChannelFuture channelFuture) -> {
+
+        IEndPointProvider.Endpoint endpoint = endPointProvider.getEndpoint();
+        bootstrap.connect(endpoint.getHost(), endpoint.getPort()).addListener((ChannelFuture channelFuture) -> {
             if (!channelFuture.isSuccess()) {
                 final EventLoop loop = channelFuture.channel().eventLoop();
                 if (maxRetry == 0) {
-                    log.warn("无法连接{}:{}，已达到最大重试次数{}", this.host, this.port, this.maxRetry);
+                    log.warn("无法连接{}:{}，已达到最大重试次数{}", endpoint.getHost(), endpoint.getPort(), this.maxRetry);
                     isConnecting = false;
                     return;
                 }
-                log.warn("无法连接{}:{}，{}秒后重试。剩余重试次数:{}", this.host, this.port, 1, maxRetry);
-                loop.schedule(() -> {
-                    doConnect(maxRetry - 1);
-                }, 1L, TimeUnit.SECONDS);
+                log.warn("无法连接{}:{}，{}秒后重试。剩余重试次数:{}", endpoint.getHost(), endpoint.getPort(), 1, maxRetry);
+                loop.schedule(() -> doConnect(maxRetry - 1),
+                              1L,
+                              TimeUnit.SECONDS);
             } else {
                 isConnecting = false;
-                log.info("成功连接{}:{}", this.host, this.port);
+                log.info("成功连接{}:{}", endpoint.getHost(), endpoint.getPort());
             }
         });
     }
