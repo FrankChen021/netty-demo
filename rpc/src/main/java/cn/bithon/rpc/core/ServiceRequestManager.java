@@ -1,5 +1,7 @@
 package cn.bithon.rpc.core;
 
+import cn.bithon.rpc.core.exception.ServiceInvocationException;
+import cn.bithon.rpc.core.exception.TimeoutException;
 import cn.bithon.rpc.core.message.ServiceException;
 import cn.bithon.rpc.core.message.ServiceMessageType;
 import cn.bithon.rpc.core.message.ServiceRequest;
@@ -36,6 +38,11 @@ public class ServiceRequestManager {
         long responseAt;
         Class<?> returnObjType;
         Object response;
+        /**
+         * indicate whether this request has response.
+         * This is required so that {@link #response} might be null
+         */
+        boolean returned;
         ServiceException exception;
     }
 
@@ -60,33 +67,45 @@ public class ServiceRequestManager {
 
         Class<?> returnType = method.getReturnType();
         boolean isReturnVoid = returnType.equals(Void.TYPE);
-        InflightRequest pendingRequest = null;
+        InflightRequest inflightRequest = null;
         if (!isReturnVoid) {
-            pendingRequest = new InflightRequest();
-            pendingRequest.requestAt = System.currentTimeMillis();
-            pendingRequest.methodName = serviceRequest.getMethodName();
-            pendingRequest.serviceName = serviceRequest.getServiceName();
-            pendingRequest.returnObjType = returnType;
-            this.inflightRequests.put(serviceRequest.getTransactionId(), pendingRequest);
+            inflightRequest = new InflightRequest();
+            inflightRequest.requestAt = System.currentTimeMillis();
+            inflightRequest.methodName = serviceRequest.getMethodName();
+            inflightRequest.serviceName = serviceRequest.getServiceName();
+            inflightRequest.returnObjType = returnType;
+            this.inflightRequests.put(serviceRequest.getTransactionId(), inflightRequest);
         }
         try {
             channel.writeAndFlush(om.writeValueAsString(serviceRequest));
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            throw new ServiceInvocationException("Failed to serialize service request due to: %s", e.getMessage());
         }
-        if (pendingRequest != null) {
+        if (inflightRequest != null) {
             try {
                 Integer timeout = timeoutSetting.get();
-                synchronized (pendingRequest) {
-                    pendingRequest.wait(timeout == null ? 5000 : timeout);
+                synchronized (inflightRequest) {
+                    inflightRequest.wait(timeout == null ? 5000 : timeout);
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                inflightRequests.remove(serviceRequest.getTransactionId());
+                throw new ServiceInvocationException("interrupted");
             }
-            if (pendingRequest.exception != null) {
-                throw new ServiceInvocationException(pendingRequest.exception.getMessage());
+
+            //make sure it has been cleared when timeout
+            inflightRequests.remove(serviceRequest.getTransactionId());
+
+            if (inflightRequest.exception != null) {
+                throw new ServiceInvocationException(inflightRequest.exception.getMessage());
             }
-            return pendingRequest.response;
+
+            if (!inflightRequest.returned) {
+                throw new TimeoutException(serviceRequest.getServiceName(),
+                                           serviceRequest.getMethodName(),
+                                           5000);
+            }
+
+            return inflightRequest.response;
         }
         return null;
     }
@@ -98,7 +117,7 @@ public class ServiceRequestManager {
         }
 
         long txId = transactionId.asLong();
-        InflightRequest inflightRequest = inflightRequests.get(txId);
+        InflightRequest inflightRequest = inflightRequests.remove(txId);
         if (inflightRequest == null) {
             return;
         }
@@ -113,6 +132,8 @@ public class ServiceRequestManager {
             if (exceptionNode != null && !exceptionNode.isNull()) {
                 inflightRequest.exception = om.convertValue(exceptionNode, ServiceException.class);
             }
+
+            inflightRequest.returned = true;
 
             inflightRequest.notify();
         }

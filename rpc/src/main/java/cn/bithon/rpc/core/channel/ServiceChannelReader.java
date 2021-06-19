@@ -1,5 +1,7 @@
-package cn.bithon.rpc.core;
+package cn.bithon.rpc.core.channel;
 
+import cn.bithon.rpc.core.ServiceInvocationDispatcher;
+import cn.bithon.rpc.core.ServiceRequestManager;
 import cn.bithon.rpc.core.message.ServiceMessageType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,12 +30,11 @@ public class ServiceChannelReader extends ChannelInboundHandlerAdapter {
 
             long messageType = messageTypeNode.asLong();
             if (messageType == ServiceMessageType.CLIENT_REQUEST) {
-                ServiceInvocationManager.getInstance().invoke(ctx.channel(), messageJsonNode);
+                ServiceInvocationDispatcher.getInstance().dispatch(ctx.channel(), messageJsonNode);
             } else if (messageType == ServiceMessageType.SERVER_RESPONSE) {
                 ServiceRequestManager.getInstance().onResponse(messageJsonNode);
             }
         } catch (IOException e) {
-
         }
     }
 }

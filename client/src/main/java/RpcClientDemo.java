@@ -1,4 +1,4 @@
-import cn.bithon.rpc.core.ClientChannelProvider;
+import cn.bithon.rpc.core.channel.ClientChannelProvider;
 import cn.bithon.rpc.core.ServiceRegistry;
 import cn.bithon.rpc.core.ServiceStubBuilder;
 import cn.bithon.rpc.core.example.ICalculator;

@@ -1,5 +1,7 @@
 package cn.bithon.rpc.core;
 
+import cn.bithon.rpc.core.exception.BadRequestException;
+import cn.bithon.rpc.core.exception.ServiceInvocationException;
 import cn.bithon.rpc.core.message.ServiceException;
 import cn.bithon.rpc.core.message.ServiceMessageType;
 import cn.bithon.rpc.core.message.ServiceResponse;
@@ -19,11 +21,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class ServiceInvocationManager {
+public class ServiceInvocationDispatcher {
 
-    private static final ServiceInvocationManager INSTANCE = new ServiceInvocationManager();
+    private static final ServiceInvocationDispatcher INSTANCE = new ServiceInvocationDispatcher();
 
-    public static ServiceInvocationManager getInstance() {
+    public static ServiceInvocationDispatcher getInstance() {
         return INSTANCE;
     }
 
@@ -34,18 +36,8 @@ public class ServiceInvocationManager {
                                                              new SynchronousQueue<>());
     private final ObjectMapper om = new ObjectMapper();
 
-    public void invoke(Channel channel, JsonNode messageNode) {
+    public void dispatch(Channel channel, JsonNode messageNode) {
         executor.execute(new Invoker(om, channel, messageNode));
-    }
-
-    static class BadRequestException extends ServiceInvocationException {
-        public BadRequestException(String message) {
-            super(message);
-        }
-
-        public BadRequestException(String messageFormat, Object... args) {
-            super(messageFormat, args);
-        }
     }
 
     @AllArgsConstructor

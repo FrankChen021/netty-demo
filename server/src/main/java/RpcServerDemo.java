@@ -1,4 +1,4 @@
-import cn.bithon.rpc.core.ServiceHost;
+import cn.bithon.rpc.core.channel.ServerChannelManager;
 import cn.bithon.rpc.core.example.ICalculator;
 import cn.bithon.rpc.core.example.INotification;
 
@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class RpcServerDemo {
     public static void main(String[] args) {
-        ServiceHost serviceHost = new ServiceHost()
+        ServerChannelManager serverChannelManager = new ServerChannelManager()
             .addService(ICalculator.class, new ICalculator() {
                 @Override
                 public int div(int a, int b) {
@@ -19,12 +19,12 @@ public class RpcServerDemo {
         while (true) {
             String line = scanner.nextLine();
             if ("stop".equals(line)) {
-                serviceHost.shutdown();
+                serverChannelManager.shutdown();
                 break;
             }
 
-            for (String clientEndpoint : serviceHost.getClientEndpoints()) {
-                INotification notification = serviceHost.getServiceStub(clientEndpoint, INotification.class);
+            for (String clientEndpoint : serverChannelManager.getClientEndpoints()) {
+                INotification notification = serverChannelManager.getServiceStub(clientEndpoint, INotification.class);
                 notification.notify(line);
             }
         }

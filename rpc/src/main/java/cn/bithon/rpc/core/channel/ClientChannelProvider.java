@@ -1,4 +1,4 @@
-package cn.bithon.rpc.core;
+package cn.bithon.rpc.core.channel;
 
 import cn.bithon.rpc.core.endpoint.IEndPointProvider;
 import cn.bithon.rpc.core.endpoint.SingleEndPointProvider;

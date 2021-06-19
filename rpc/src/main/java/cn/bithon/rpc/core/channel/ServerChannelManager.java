@@ -1,5 +1,8 @@
-package cn.bithon.rpc.core;
+package cn.bithon.rpc.core.channel;
 
+import cn.bithon.rpc.core.IService;
+import cn.bithon.rpc.core.ServiceRegistry;
+import cn.bithon.rpc.core.ServiceStubBuilder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -17,17 +20,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ServiceHost {
+public class ServerChannelManager {
 
     private final NioEventLoopGroup bossGroup = new NioEventLoopGroup();
     private final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
-    public <T extends IService> ServiceHost addService(Class<T> interfaceClass, T impl) {
+    public <T extends IService> ServerChannelManager addService(Class<T> interfaceClass, T impl) {
         ServiceRegistry.register(interfaceClass, impl);
         return this;
     }
 
-    public ServiceHost start(int port) {
+    public ServerChannelManager start(int port) {
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap
             .group(bossGroup, workerGroup)
@@ -44,7 +47,7 @@ public class ServiceHost {
                     ch.pipeline().addLast("decoder", new StringDecoder(CharsetUtil.UTF_8));
                     ch.pipeline().addLast("encoder", new StringEncoder(CharsetUtil.UTF_8));
                     ch.pipeline().addLast(new ServiceChannelReader());
-                    ch.pipeline().addLast(new ClientChannelManager());
+                    ch.pipeline().addLast(new ClientServiceManager());
                 }
             });
         serverBootstrap.bind(port);
@@ -78,12 +81,18 @@ public class ServiceHost {
         return clientServices.keySet();
     }
 
-    class ClientChannelManager extends ChannelInboundHandlerAdapter {
+    class ClientServiceManager extends ChannelInboundHandlerAdapter {
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             Channel channel = ctx.channel();
             clientServices.computeIfAbsent(channel.remoteAddress().toString(), key -> new ClientService(channel));
             super.channelActive(ctx);
+        }
+
+        @Override
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+            clientServices.remove(ctx.channel().remoteAddress().toString());
+            super.channelInactive(ctx);
         }
     }
 
