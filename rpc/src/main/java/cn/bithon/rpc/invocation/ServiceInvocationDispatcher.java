@@ -1,8 +1,6 @@
 package cn.bithon.rpc.invocation;
 
-import cn.bithon.rpc.IService;
 import cn.bithon.rpc.ServiceRegistry;
-import cn.bithon.rpc.channel.DefaultChannelProvider;
 import cn.bithon.rpc.exception.BadRequestException;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.message.ServiceException;
@@ -190,14 +188,6 @@ public class ServiceInvocationDispatcher {
                 if (inputArgNode != null && !inputArgNode.isNull()) {
                     try {
                         inputArgs[i] = om.convertValue(inputArgNode, parameterTypes[i].getMessageType());
-                        if (parameterTypes[i].isProxyType()) {
-                            //
-                            //generate a proxy object
-                            //
-                            //noinspection unchecked
-                            inputArgs[i] = ServiceStubBuilder.create(new DefaultChannelProvider(channel),
-                                                                     (Class<? extends IService>) parameterTypes[i].getRawType());
-                        }
                     } catch (IllegalArgumentException e) {
                         throw new BadRequestException("Bad args for %s#%s at %d: %s",
                                                       serviceName,

@@ -2,7 +2,7 @@ import cn.bithon.rpc.channel.ClientChannelProvider;
 import cn.bithon.rpc.example.ICalculator;
 import cn.bithon.rpc.example.INotification;
 import cn.bithon.rpc.exception.ServiceInvocationException;
-import cn.bithon.rpc.invocation.ServiceStubBuilder;
+import cn.bithon.rpc.invocation.ServiceStubFactory;
 
 import java.util.Scanner;
 
@@ -25,7 +25,7 @@ public class RpcClientDemo {
                         });
 
         //channelProvider.debug(true);
-        ICalculator calculator = ServiceStubBuilder.create(channelProvider, ICalculator.class);
+        ICalculator calculator = ServiceStubFactory.create(channelProvider, ICalculator.class);
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("method=");

@@ -1,7 +1,5 @@
 package cn.bithon.rpc;
 
-import cn.bithon.rpc.message.ServiceObjectArg;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -39,10 +37,6 @@ public class ServiceRegistry {
         public Class<?> getMessageType() {
             return messageType;
         }
-
-        public boolean isProxyType() {
-            return !messageType.equals(rawType);
-        }
     }
 
     public static class RpcServiceProvider {
@@ -60,9 +54,7 @@ public class ServiceRegistry {
             Class<?>[] parameterRawTypes = method.getParameterTypes();
             for (int i = 0; i < parameterRawTypes.length; i++) {
                 parameterTypes[i] = new ParameterType(parameterRawTypes[i],
-                                                      IService.isService(parameterRawTypes[i])
-                                                      ? ServiceObjectArg.class
-                                                      : parameterRawTypes[i]);
+                                                      parameterRawTypes[i]);
             }
         }
 

@@ -2,7 +2,7 @@ package cn.bithon.rpc.channel;
 
 import cn.bithon.rpc.IService;
 import cn.bithon.rpc.ServiceRegistry;
-import cn.bithon.rpc.invocation.ServiceStubBuilder;
+import cn.bithon.rpc.invocation.ServiceStubFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -109,7 +109,7 @@ public class ServerChannelManager {
         }
 
         return (T) clientService.services.computeIfAbsent(serviceClass,
-                                                          key -> ServiceStubBuilder.create(new IServiceChannel() {
+                                                          key -> ServiceStubFactory.create(new IServiceChannel() {
                                                                                                @Override
                                                                                                public Channel getChannel() {
                                                                                                    return clientService.channel;

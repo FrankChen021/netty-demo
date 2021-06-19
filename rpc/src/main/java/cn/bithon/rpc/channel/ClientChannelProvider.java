@@ -4,7 +4,7 @@ import cn.bithon.rpc.IService;
 import cn.bithon.rpc.ServiceRegistry;
 import cn.bithon.rpc.endpoint.IEndPointProvider;
 import cn.bithon.rpc.endpoint.SingleEndPointProvider;
-import cn.bithon.rpc.invocation.ServiceStubBuilder;
+import cn.bithon.rpc.invocation.ServiceStubFactory;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -154,6 +154,6 @@ public class ClientChannelProvider implements IServiceChannel {
     public <T extends IService> T getRemoteService(Class<T> serviceType) {
         //TODO: move into invoke
         this.connect();
-        return ServiceStubBuilder.create(this, serviceType);
+        return ServiceStubFactory.create(this, serviceType);
     }
 }

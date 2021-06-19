@@ -83,7 +83,11 @@ public class ServiceRequestManager {
             this.inflightRequests.put(serviceRequest.getTransactionId(), inflightRequest);
         }
         try {
-            channelProvider.writeAndFlush(om.writeValueAsString(serviceRequest));
+            String message = om.writeValueAsString(serviceRequest);
+            if (debug) {
+                log.info("[DEBUGGING] Sending message: {}", message);
+            }
+            channelProvider.writeAndFlush(message);
         } catch (JsonProcessingException e) {
             throw new ServiceInvocationException("Failed to serialize service request due to: %s", e.getMessage());
         }
