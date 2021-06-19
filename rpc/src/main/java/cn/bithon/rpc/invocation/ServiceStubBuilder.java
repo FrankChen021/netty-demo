@@ -1,9 +1,8 @@
-package cn.bithon.rpc.core;
+package cn.bithon.rpc.invocation;
 
-import cn.bithon.rpc.core.channel.ClientChannelProvider;
-import cn.bithon.rpc.core.channel.IServiceChannelProvider;
-import cn.bithon.rpc.core.exception.ServiceInvocationException;
-import io.netty.channel.Channel;
+import cn.bithon.rpc.IService;
+import cn.bithon.rpc.channel.ClientChannelProvider;
+import cn.bithon.rpc.channel.IServiceChannelProvider;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

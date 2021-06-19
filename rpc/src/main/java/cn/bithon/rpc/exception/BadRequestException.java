@@ -1,6 +1,4 @@
-package cn.bithon.rpc.core.exception;
-
-import cn.bithon.rpc.core.exception.ServiceInvocationException;
+package cn.bithon.rpc.exception;
 
 public class BadRequestException extends ServiceInvocationException {
     public BadRequestException(String message) {

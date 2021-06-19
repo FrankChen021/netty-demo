@@ -1,10 +1,11 @@
-package cn.bithon.rpc.core;
+package cn.bithon.rpc.invocation;
 
-import cn.bithon.rpc.core.exception.BadRequestException;
-import cn.bithon.rpc.core.exception.ServiceInvocationException;
-import cn.bithon.rpc.core.message.ServiceException;
-import cn.bithon.rpc.core.message.ServiceMessageType;
-import cn.bithon.rpc.core.message.ServiceResponse;
+import cn.bithon.rpc.ServiceRegistry;
+import cn.bithon.rpc.exception.BadRequestException;
+import cn.bithon.rpc.exception.ServiceInvocationException;
+import cn.bithon.rpc.message.ServiceException;
+import cn.bithon.rpc.message.ServiceMessageType;
+import cn.bithon.rpc.message.ServiceResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;

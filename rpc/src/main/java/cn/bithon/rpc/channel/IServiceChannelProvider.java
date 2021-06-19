@@ -1,4 +1,4 @@
-package cn.bithon.rpc.core.channel;
+package cn.bithon.rpc.channel;
 
 import io.netty.channel.Channel;
 

@@ -1,4 +1,4 @@
-package cn.bithon.rpc.core.message;
+package cn.bithon.rpc.message;
 
 import lombok.Builder;
 import lombok.Data;

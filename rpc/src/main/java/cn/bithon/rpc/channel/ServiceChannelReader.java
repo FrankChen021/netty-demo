@@ -1,8 +1,8 @@
-package cn.bithon.rpc.core.channel;
+package cn.bithon.rpc.channel;
 
-import cn.bithon.rpc.core.ServiceInvocationDispatcher;
-import cn.bithon.rpc.core.ServiceRequestManager;
-import cn.bithon.rpc.core.message.ServiceMessageType;
+import cn.bithon.rpc.invocation.ServiceInvocationDispatcher;
+import cn.bithon.rpc.invocation.ServiceRequestManager;
+import cn.bithon.rpc.message.ServiceMessageType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;

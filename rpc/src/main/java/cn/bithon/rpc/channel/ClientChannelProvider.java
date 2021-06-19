@@ -1,7 +1,7 @@
-package cn.bithon.rpc.core.channel;
+package cn.bithon.rpc.channel;
 
-import cn.bithon.rpc.core.endpoint.IEndPointProvider;
-import cn.bithon.rpc.core.endpoint.SingleEndPointProvider;
+import cn.bithon.rpc.endpoint.IEndPointProvider;
+import cn.bithon.rpc.endpoint.SingleEndPointProvider;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;

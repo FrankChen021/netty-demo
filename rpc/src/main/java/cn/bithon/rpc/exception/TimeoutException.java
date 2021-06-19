@@ -1,4 +1,4 @@
-package cn.bithon.rpc.core.exception;
+package cn.bithon.rpc.exception;
 
 public class TimeoutException extends ServiceInvocationException {
     public TimeoutException(String service, String method, int timeout) {

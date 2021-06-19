@@ -1,4 +1,4 @@
-package cn.bithon.rpc.core.endpoint;
+package cn.bithon.rpc.endpoint;
 
 import java.util.concurrent.ThreadLocalRandom;
 

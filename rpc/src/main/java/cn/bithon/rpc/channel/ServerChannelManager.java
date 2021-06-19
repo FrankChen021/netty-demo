@@ -1,8 +1,8 @@
-package cn.bithon.rpc.core.channel;
+package cn.bithon.rpc.channel;
 
-import cn.bithon.rpc.core.IService;
-import cn.bithon.rpc.core.ServiceRegistry;
-import cn.bithon.rpc.core.ServiceStubBuilder;
+import cn.bithon.rpc.IService;
+import cn.bithon.rpc.ServiceRegistry;
+import cn.bithon.rpc.invocation.ServiceStubBuilder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -104,7 +104,22 @@ public class ServerChannelManager {
         }
 
         return (T) clientService.services.computeIfAbsent(serviceClass,
-                                                          key -> ServiceStubBuilder.create(() -> clientService.channel,
+                                                          key -> ServiceStubBuilder.create(new IServiceChannelProvider() {
+                                                                                               @Override
+                                                                                               public Channel getChannel() {
+                                                                                                   return clientService.channel;
+                                                                                               }
+
+                                                                                               @Override
+                                                                                               public void writeAndFlush(Object obj) {
+                                                                                                   clientService.channel.writeAndFlush(obj);
+                                                                                               }
+
+                                                                                               @Override
+                                                                                               public void debug(boolean on) {
+
+                                                                                               }
+                                                                                           },
                                                                                            serviceClass));
     }
 }

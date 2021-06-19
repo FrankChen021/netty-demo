@@ -1,4 +1,4 @@
-package cn.bithon.rpc.core.exception;
+package cn.bithon.rpc.exception;
 
 public class ServiceInvocationException extends RuntimeException {
     public ServiceInvocationException(String message) {
