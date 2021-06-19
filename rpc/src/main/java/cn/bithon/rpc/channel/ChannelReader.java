@@ -13,6 +13,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @ChannelHandler.Sharable
@@ -32,12 +33,12 @@ public class ChannelReader extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        if (channelDebugEnabled) {
-            log.info("receiving: {}", msg);
-        }
-
         try {
-            JsonNode messageJsonNode = om.readTree(msg.toString());
+            JsonNode messageJsonNode = om.readTree((byte[]) msg);
+            if (channelDebugEnabled) {
+                log.info("receiving: {}", messageJsonNode);
+            }
+
             JsonNode messageTypeNode = messageJsonNode.get("messageType");
             if (messageTypeNode == null) {
                 return;
@@ -50,6 +51,8 @@ public class ChannelReader extends ChannelInboundHandlerAdapter {
                 ServiceRequestManager.getInstance().onResponse(messageJsonNode);
             }
         } catch (IOException e) {
+            log.error("Error deserialize message from channel:{}", new java.lang.String((byte[]) msg,
+                                                                                        StandardCharsets.UTF_8));
         }
     }
 

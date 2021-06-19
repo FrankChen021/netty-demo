@@ -13,6 +13,7 @@ public class ServiceStubFactory {
     private static Method toStringMethod;
     private static Method setTimeoutMethod;
     private static Method toInvokerMethod;
+    private static Method rstTimeoutMethod;
 
     static {
         try {
@@ -20,6 +21,7 @@ public class ServiceStubFactory {
             toInvokerMethod = IService.class.getMethod("toInvoker");
             setDebugMethod = IServiceInvoker.class.getMethod("debug", boolean.class);
             setTimeoutMethod = IServiceInvoker.class.getMethod("setTimeout", long.class);
+            rstTimeoutMethod = IServiceInvoker.class.getMethod("rstTimeout");
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
@@ -61,7 +63,10 @@ public class ServiceStubFactory {
             if (toInvokerMethod.equals(method)) {
                 return proxy;
             }
-
+            if (rstTimeoutMethod.equals(method)) {
+                this.timeout = 5000;
+                return null;
+            }
             return requestManager.invoke(channelWriter, debugEnabled, timeout, method, args);
         }
     }

@@ -12,20 +12,22 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
-import io.netty.util.CharsetUtil;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
 
+import java.io.Closeable;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ServerChannel {
+public class ServerChannel implements Closeable {
 
     private final NioEventLoopGroup bossGroup = new NioEventLoopGroup();
     private final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
-
     private final ServiceRegistry serviceRegistry = new ServiceRegistry();
+    private final ChannelReader channelReader = new ChannelReader(serviceRegistry);
 
     public <T extends IService> ServerChannel addService(Class<T> interfaceClass, T impl) {
         serviceRegistry.addService(interfaceClass, impl);
@@ -46,9 +48,12 @@ public class ServerChannel {
             .childHandler(new ChannelInitializer<NioSocketChannel>() {
                 @Override
                 protected void initChannel(NioSocketChannel ch) {
-                    ch.pipeline().addLast("decoder", new StringDecoder(CharsetUtil.UTF_8));
-                    ch.pipeline().addLast("encoder", new StringEncoder(CharsetUtil.UTF_8));
-                    ch.pipeline().addLast(new ChannelReader(serviceRegistry));
+                    ch.pipeline()
+                      .addLast("frameDecoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
+                    ch.pipeline().addLast("frameEncoder", new LengthFieldPrepender(4));
+                    ch.pipeline().addLast("decoder", new ByteArrayDecoder());
+                    ch.pipeline().addLast("encoder", new ByteArrayEncoder());
+                    ch.pipeline().addLast(channelReader);
                     ch.pipeline().addLast(new ClientServiceManager());
                 }
             });
@@ -60,7 +65,13 @@ public class ServerChannel {
         return this;
     }
 
-    public void shutdown() {
+    public ServerChannel debug(boolean on) {
+        channelReader.setChannelDebugEnabled(on);
+        return this;
+    }
+
+    @Override
+    public void close() {
         try {
             bossGroup.shutdownGracefully().sync();
         } catch (InterruptedException ignored) {

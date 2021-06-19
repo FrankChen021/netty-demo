@@ -7,4 +7,6 @@ public interface IServiceInvoker {
      * @param timeout milli-second
      */
     void setTimeout(long timeout);
+
+    void rstTimeout();
 }

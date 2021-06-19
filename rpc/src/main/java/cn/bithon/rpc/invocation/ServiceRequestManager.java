@@ -54,7 +54,7 @@ public class ServiceRequestManager {
 
     public Object invoke(IChannelWriter channelWriter, boolean debug, long timeout, Method method, Object[] args) {
         if (channelWriter instanceof IChannelConnectable) {
-            ((IChannelConnectable)channelWriter).connect();
+            ((IChannelConnectable) channelWriter).connect();
         }
         Channel ch = channelWriter.getChannel();
         if (ch == null) {
@@ -64,6 +64,11 @@ public class ServiceRequestManager {
         }
         if (!ch.isActive()) {
             throw new ServiceInvocationException("Failed to invoke %s#%s due to channel is not active",
+                                                 method.getDeclaringClass().getSimpleName(),
+                                                 method.getName());
+        }
+        if (!ch.isWritable()) {
+            throw new ServiceInvocationException("Failed to invoke %s#%s due to channel is not writable",
                                                  method.getDeclaringClass().getSimpleName(),
                                                  method.getName());
         }
@@ -87,9 +92,9 @@ public class ServiceRequestManager {
             this.inflightRequests.put(serviceRequest.getTransactionId(), inflightRequest);
         }
         try {
-            String message = om.writeValueAsString(serviceRequest);
+            byte[] message = om.writeValueAsBytes(serviceRequest);
             if (debug) {
-                log.info("[DEBUGGING] Sending message: {}", message);
+                //log.info("[DEBUGGING] Sending message: {}", message);
             }
             channelWriter.writeAndFlush(message);
         } catch (JsonProcessingException e) {

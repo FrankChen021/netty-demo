@@ -29,7 +29,7 @@ public class RpcServerDemo {
         while (true) {
             String line = scanner.nextLine();
             if ("stop".equals(line)) {
-                serverChannel.shutdown();
+                serverChannel.close();
                 break;
             }
 

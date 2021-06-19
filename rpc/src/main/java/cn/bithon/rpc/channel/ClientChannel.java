@@ -15,11 +15,14 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.util.concurrent.Future;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.Closeable;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Should only be used at the client side
  */
 @Slf4j
-public class ClientChannel implements IChannelWriter, IChannelConnectable {
+public class ClientChannel implements IChannelWriter, IChannelConnectable, Closeable {
 
     //
     // channel
@@ -61,8 +64,11 @@ public class ClientChannel implements IChannelWriter, IChannelConnectable {
                  .handler(new ChannelInitializer<SocketChannel>() {
                      @Override
                      public void initChannel(SocketChannel ch) {
-                         ch.pipeline().addLast("decoder", new StringDecoder());
-                         ch.pipeline().addLast("encoder", new StringEncoder());
+                         ch.pipeline()
+                           .addLast("frameDecoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
+                         ch.pipeline().addLast("frameEncoder", new LengthFieldPrepender(4));
+                         ch.pipeline().addLast("decoder", new ByteArrayDecoder());
+                         ch.pipeline().addLast("encoder", new ByteArrayEncoder());
                          ch.pipeline().addLast(new ClientChannelManager());
                          ch.pipeline().addLast(new ChannelReader(serviceRegistry));
                      }
@@ -84,7 +90,7 @@ public class ClientChannel implements IChannelWriter, IChannelConnectable {
     }
 
     @Override
-    public void connect() {
+    synchronized public void connect() {
         if (bossGroup == null) {
             throw new IllegalStateException("client channel has been shutdown");
         }
@@ -99,7 +105,8 @@ public class ClientChannel implements IChannelWriter, IChannelConnectable {
         return this;
     }
 
-    public void shutdown() {
+    @Override
+    public void close() {
         try {
             this.bossGroup.shutdownGracefully().sync();
         } catch (InterruptedException ignored) {

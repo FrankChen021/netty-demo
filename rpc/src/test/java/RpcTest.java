@@ -8,6 +8,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class RpcTest {
 
     ServerChannel serverChannel;
@@ -30,52 +33,86 @@ public class RpcTest {
                     }
                     return 0;
                 }
-            }).start(8070);
+            }).start(8070).debug(true);
     }
 
     @After
     public void teardown() {
-        serverChannel.shutdown();
+        serverChannel.close();
     }
 
     @Test
     public void test() {
-        ICalculator calculator = new ClientChannel("127.0.0.1", 8070).getRemoteService(ICalculator.class);
-        IServiceInvoker invoker = (IServiceInvoker)calculator;
-        invoker.debug(true);
-        Assert.assertEquals(2, calculator.div(6, 3));
+        try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
+            ICalculator calculator = ch.getRemoteService(ICalculator.class);
+            IServiceInvoker invoker = (IServiceInvoker) calculator;
+            invoker.debug(true);
+            Assert.assertEquals(2, calculator.div(6, 3));
+        }
     }
 
     @Test
     public void testInvocationException() {
-        ICalculator calculator = new ClientChannel("127.0.0.1", 8070).getRemoteService(ICalculator.class);
-        try {
-            calculator.div(6, 0);
-            Assert.assertTrue(false);
-        } catch (ServiceInvocationException e) {
-            System.out.println(e.getMessage());
-            Assert.assertTrue(e.getMessage().contains("/ by zero"));
+        try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
+            ICalculator calculator = ch.getRemoteService(ICalculator.class);
+
+            try {
+                calculator.div(6, 0);
+                Assert.assertTrue(false);
+            } catch (ServiceInvocationException e) {
+                System.out.println(e.getMessage());
+                Assert.assertTrue(e.getMessage().contains("/ by zero"));
+            }
         }
     }
 
     @Test
     public void testClientSideTimeout() {
-        ICalculator calculator = new ClientChannel("127.0.0.1", 8070).getRemoteService(ICalculator.class);
-        calculator.block(2);
+        try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
+            ICalculator calculator = ch.getRemoteService(ICalculator.class);
 
-        try {
-            calculator.block(6);
-            Assert.assertTrue(false);
-        } catch (ServiceInvocationException e) {
-            Assert.assertTrue(true);
+            calculator.block(2);
+
+            try {
+                calculator.block(6);
+                Assert.assertTrue(false);
+            } catch (ServiceInvocationException e) {
+                Assert.assertTrue(true);
+            }
+
+            calculator.toInvoker().setTimeout(2000);
+            try {
+                calculator.block(3);
+                Assert.assertTrue(false);
+            } catch (ServiceInvocationException e) {
+                Assert.assertTrue(true);
+            }
+        }
+    }
+
+    @Test
+    public void testConcurrent() {
+        try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
+            ICalculator calculator = ch.getRemoteService(ICalculator.class);
+
+            AtomicInteger v = new AtomicInteger();
+            AtomicInteger i = new AtomicInteger();
+            ThreadLocalRandom.current().ints(1000, 5, 1000).parallel().forEach(divisor -> {
+                try {
+                    int idx = i.incrementAndGet();
+                    int val = calculator.div(divisor, 1);
+                    if (val != divisor) {
+                        v.incrementAndGet();
+                    }
+                    System.out.printf("%s:%d, ret=%s\n", Thread.currentThread().getName(), idx, val == divisor);
+                } catch (ServiceInvocationException e) {
+                    System.out.println(e.getMessage());
+                    v.incrementAndGet();
+                }
+            });
+
+            Assert.assertEquals(0, v.get());
         }
 
-        calculator.toInvoker().setTimeout(2000);
-        try {
-            calculator.block(3);
-            Assert.assertTrue(false);
-        } catch (ServiceInvocationException e) {
-            Assert.assertTrue(true);
-        }
     }
 }

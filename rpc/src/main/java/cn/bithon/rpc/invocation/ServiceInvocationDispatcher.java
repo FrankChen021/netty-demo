@@ -29,7 +29,7 @@ public class ServiceInvocationDispatcher {
     private final Executor executor = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() - 1,
                                                              50,
                                                              0L, TimeUnit.MILLISECONDS,
-                                                             new LinkedBlockingQueue<>(),
+                                                             new LinkedBlockingQueue<>(4096),
                                                              new RejectHandler());
     private final ObjectMapper om = new ObjectMapper();
 
@@ -62,7 +62,7 @@ public class ServiceInvocationDispatcher {
 
     static void sendResponse(Channel channel, ObjectMapper om, ServiceResponse serviceResponse) {
         try {
-            channel.writeAndFlush(om.writeValueAsString(serviceResponse));
+            channel.writeAndFlush(om.writeValueAsBytes(serviceResponse));
         } catch (IOException e) {
             log.error(String.format("Exception sending RPC response(%s)", serviceResponse), e);
         }
