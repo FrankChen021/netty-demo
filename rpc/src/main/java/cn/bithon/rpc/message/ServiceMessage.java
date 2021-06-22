@@ -5,14 +5,14 @@ import io.netty.buffer.ByteBuf;
 import java.nio.charset.StandardCharsets;
 
 public abstract class ServiceMessage {
-    protected Long transactionId;
+    protected long transactionId;
 
     /**
      * {@link ServiceMessageType}
      */
-    abstract public Long getMessageType();
+    abstract public int getMessageType();
 
-    public Long getTransactionId() {
+    public long getTransactionId() {
         return transactionId;
     }
 

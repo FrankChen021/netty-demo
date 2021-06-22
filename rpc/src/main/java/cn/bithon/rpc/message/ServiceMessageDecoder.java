@@ -9,8 +9,8 @@ import java.util.List;
 public class ServiceMessageDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
-        if ( in.readableBytes() >= 8 ) {
-            long messageType = in.readLong();
+        if ( in.readableBytes() >= 4 ) {
+            int messageType = in.readInt();
             if (messageType == ServiceMessageType.CLIENT_REQUEST) {
                 out.add(new ServiceRequestMessage().decode(in));
             } else if (messageType == ServiceMessageType.SERVER_RESPONSE) {

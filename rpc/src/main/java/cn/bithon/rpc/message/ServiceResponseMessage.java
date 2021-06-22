@@ -10,13 +10,13 @@ public class ServiceResponseMessage extends ServiceMessage {
     private CharSequence exception;
 
     @Override
-    public Long getMessageType() {
+    public int getMessageType() {
         return ServiceMessageType.SERVER_RESPONSE;
     }
 
     @Override
     public void encode(ByteBuf out) {
-        out.writeLong(this.getMessageType());
+        out.writeInt(this.getMessageType());
         out.writeLong(this.getTransactionId());
 
         out.writeLong(serverResponseAt);

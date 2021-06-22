@@ -15,13 +15,13 @@ public class ServiceRequestMessage extends ServiceMessage {
     private byte[] args;
 
     @Override
-    public Long getMessageType() {
+    public int getMessageType() {
         return ServiceMessageType.CLIENT_REQUEST;
     }
 
     @Override
     public void encode(ByteBuf out) {
-        out.writeLong(this.getMessageType());
+        out.writeInt(this.getMessageType());
         out.writeLong(this.getTransactionId());
 
         writeString(this.serviceName, out);

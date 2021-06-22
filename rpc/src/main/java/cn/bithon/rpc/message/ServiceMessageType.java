@@ -1,6 +1,6 @@
 package cn.bithon.rpc.message;
 
 public class ServiceMessageType {
-    public static final long CLIENT_REQUEST = 1;
-    public static final long SERVER_RESPONSE = 2;
+    public static final int CLIENT_REQUEST = 0x021;
+    public static final int SERVER_RESPONSE = 0x515;
 }
