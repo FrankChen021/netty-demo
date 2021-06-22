@@ -1,7 +1,5 @@
 package cn.bithon.rpc;
 
-import cn.bithon.rpc.invocation.IServiceInvoker;
-
 public interface IService {
 
     static boolean isService(Class<?> type) {
@@ -13,7 +11,7 @@ public interface IService {
         return false;
     }
 
-    default IServiceInvoker toInvoker() {
-        return (IServiceInvoker) this;
+    default IServiceHelper toInvoker() {
+        return (IServiceHelper) this;
     }
 }

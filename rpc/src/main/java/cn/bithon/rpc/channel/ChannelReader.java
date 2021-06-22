@@ -1,12 +1,14 @@
 package cn.bithon.rpc.channel;
 
 import cn.bithon.rpc.ServiceRegistry;
-import cn.bithon.rpc.invocation.ServiceInvocationDispatcher;
+import cn.bithon.rpc.invocation.IServiceInvoker;
+import cn.bithon.rpc.invocation.ServiceInvocationRunnable;
 import cn.bithon.rpc.invocation.ServiceRequestManager;
 import cn.bithon.rpc.message.ServiceMessage;
 import cn.bithon.rpc.message.ServiceMessageType;
 import cn.bithon.rpc.message.ServiceRequestMessage;
 import cn.bithon.rpc.message.ServiceResponseMessage;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -16,15 +18,18 @@ import lombok.extern.slf4j.Slf4j;
 @ChannelHandler.Sharable
 public class ChannelReader extends ChannelInboundHandlerAdapter {
 
-    private final ServiceInvocationDispatcher serviceInvocationDispatcher;
+    private final IServiceInvoker invoker;
+    private final ServiceRegistry serviceRegistry;
+    private final ObjectMapper om = new ObjectMapper();
     private boolean channelDebugEnabled;
 
     public ChannelReader(ServiceRegistry serviceRegistry) {
-        this.serviceInvocationDispatcher = new ServiceInvocationDispatcher(serviceRegistry);
+        this(serviceRegistry, ServiceInvocationRunnable::run);
     }
 
-    public ChannelReader(ServiceInvocationDispatcher serviceInvocationDispatcher) {
-        this.serviceInvocationDispatcher = serviceInvocationDispatcher;
+    public ChannelReader(ServiceRegistry serviceRegistry, IServiceInvoker dispatcher) {
+        this.serviceRegistry = serviceRegistry;
+        this.invoker = dispatcher;
     }
 
     @Override
@@ -43,7 +48,10 @@ public class ChannelReader extends ChannelInboundHandlerAdapter {
                          request.getMethodName());
             }
 
-            serviceInvocationDispatcher.dispatch(ctx.channel(), (ServiceRequestMessage) message);
+            invoker.invoke(new ServiceInvocationRunnable(om,
+                                                         serviceRegistry,
+                                                         ctx.channel(),
+                                                         (ServiceRequestMessage) message));
         } else if (message.getMessageType() == ServiceMessageType.SERVER_RESPONSE) {
             if (channelDebugEnabled) {
                 log.info("receiving response, txId={}", message.getTransactionId());

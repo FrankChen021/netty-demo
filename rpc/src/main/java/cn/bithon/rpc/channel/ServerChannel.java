@@ -6,18 +6,18 @@ import cn.bithon.rpc.invocation.ServiceStubFactory;
 import cn.bithon.rpc.message.ServiceMessageDecoder;
 import cn.bithon.rpc.message.ServiceMessageEncoder;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-import io.netty.handler.codec.bytes.ByteArrayDecoder;
-import io.netty.handler.codec.bytes.ByteArrayEncoder;
 
 import java.io.Closeable;
 import java.util.Map;
@@ -26,9 +26,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ServerChannel implements Closeable {
 
-    private final NioEventLoopGroup bossGroup = new NioEventLoopGroup();
+    private final NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
     private final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
     private final ServiceRegistry serviceRegistry = new ServiceRegistry();
+
+    /**
+     * 服务端的请求直接在worker线程中处理，无需单独定义线程池
+     */
     private final ChannelReader channelReader = new ChannelReader(serviceRegistry);
 
     public <T extends IService> ServerChannel addService(Class<T> interfaceClass, T impl) {
@@ -37,10 +41,14 @@ public class ServerChannel implements Closeable {
     }
 
     public ServerChannel start(int port) {
+
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap
             .group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel.class)
+            //设置底层使用对象池减少内存开销 提升GC效率
+            .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
+            .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             //服务端可连接队列数,对应TCP/IP协议listen函数中backlog参数
             .option(ChannelOption.SO_BACKLOG, 1024)
             //设置TCP长连接,一般如果两个小时内没有数据的通信时,TCP会自动发送一个活动探测数据报文
@@ -50,20 +58,23 @@ public class ServerChannel implements Closeable {
             .childHandler(new ChannelInitializer<NioSocketChannel>() {
                 @Override
                 protected void initChannel(NioSocketChannel ch) {
-                    ch.pipeline()
-                      .addLast("frameDecoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
-                    ch.pipeline().addLast("frameEncoder", new LengthFieldPrepender(4));
-                    ch.pipeline().addLast("decoder", new ServiceMessageDecoder());
-                    ch.pipeline().addLast("encoder", new ServiceMessageEncoder());
-                    ch.pipeline().addLast(channelReader);
-                    ch.pipeline().addLast(new ClientServiceManager());
+                    ChannelPipeline pipeline = ch.pipeline();
+                    pipeline.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(16384, 0, 4, 0, 4));
+                    pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
+                    pipeline.addLast("decoder", new ServiceMessageDecoder());
+                    pipeline.addLast("encoder", new ServiceMessageEncoder());
+                    pipeline.addLast(channelReader);
+                    pipeline.addLast(new ClientServiceManager());
                 }
             });
         try {
             serverBootstrap.bind(port).sync();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            System.exit(-1);
         }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            close();
+        }));
         return this;
     }
 

@@ -6,6 +6,7 @@ import cn.bithon.rpc.endpoint.IEndPointProvider;
 import cn.bithon.rpc.endpoint.SingleEndPointProvider;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.invocation.ServiceStubFactory;
+import cn.bithon.rpc.invocation.ThreadPoolServiceInvoker;
 import cn.bithon.rpc.message.ServiceMessageDecoder;
 import cn.bithon.rpc.message.ServiceMessageEncoder;
 import io.netty.bootstrap.Bootstrap;
@@ -14,6 +15,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -64,13 +66,20 @@ public class ClientChannel implements IChannelWriter, IChannelConnectable, Close
                  .handler(new ChannelInitializer<SocketChannel>() {
                      @Override
                      public void initChannel(SocketChannel ch) {
-                         ch.pipeline()
-                           .addLast("frameDecoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
-                         ch.pipeline().addLast("frameEncoder", new LengthFieldPrepender(4));
-                         ch.pipeline().addLast("decoder", new ServiceMessageDecoder());
-                         ch.pipeline().addLast("encoder", new ServiceMessageEncoder());
-                         ch.pipeline().addLast(new ClientChannelManager());
-                         ch.pipeline().addLast(new ChannelReader(serviceRegistry));
+                         ChannelPipeline pipeline = ch.pipeline();
+                         pipeline.addLast("frameDecoder",
+                                          new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
+                         pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
+                         pipeline.addLast("decoder", new ServiceMessageDecoder());
+                         pipeline.addLast("encoder", new ServiceMessageEncoder());
+                         pipeline.addLast(new ClientChannelManager());
+
+                         pipeline.addLast(new ChannelReader(serviceRegistry,
+                                                            // 客户端使用线程池处理服务端调用
+                                                            new ThreadPoolServiceInvoker(Runtime
+                                                                                             .getRuntime()
+                                                                                             .availableProcessors()
+                                                                                         - 1)));
                      }
                  });
     }

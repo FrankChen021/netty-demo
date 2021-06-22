@@ -2,7 +2,7 @@ import cn.bithon.rpc.channel.ClientChannel;
 import cn.bithon.rpc.channel.ServerChannel;
 import cn.bithon.rpc.example.ICalculator;
 import cn.bithon.rpc.exception.ServiceInvocationException;
-import cn.bithon.rpc.invocation.IServiceInvoker;
+import cn.bithon.rpc.IServiceHelper;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,7 +46,7 @@ public class RpcTest {
     public void test() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
             ICalculator calculator = ch.getRemoteService(ICalculator.class);
-            IServiceInvoker invoker = (IServiceInvoker) calculator;
+            IServiceHelper invoker = (IServiceHelper) calculator;
             invoker.debug(true);
             System.out.println("Start calling");
             Assert.assertEquals(2, calculator.div(6, 3));
@@ -117,9 +117,8 @@ public class RpcTest {
             Assert.assertEquals(0, v.get());
         }
     }
-}
 
-/**
- * 1. server端已经有work group，是否还需要自定义的thread pool执行操作？
- * 2. 自定义的encoder/decoder
- */
+    /**
+     * TODO：server--call-->client
+     */
+}

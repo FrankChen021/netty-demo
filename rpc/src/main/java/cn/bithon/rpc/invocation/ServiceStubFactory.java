@@ -1,6 +1,7 @@
 package cn.bithon.rpc.invocation;
 
 import cn.bithon.rpc.IService;
+import cn.bithon.rpc.IServiceHelper;
 import cn.bithon.rpc.channel.IChannelWriter;
 
 import java.lang.reflect.InvocationHandler;
@@ -19,9 +20,9 @@ public class ServiceStubFactory {
         try {
             toStringMethod = Object.class.getMethod("toString");
             toInvokerMethod = IService.class.getMethod("toInvoker");
-            setDebugMethod = IServiceInvoker.class.getMethod("debug", boolean.class);
-            setTimeoutMethod = IServiceInvoker.class.getMethod("setTimeout", long.class);
-            rstTimeoutMethod = IServiceInvoker.class.getMethod("rstTimeout");
+            setDebugMethod = IServiceHelper.class.getMethod("debug", boolean.class);
+            setTimeoutMethod = IServiceHelper.class.getMethod("setTimeout", long.class);
+            rstTimeoutMethod = IServiceHelper.class.getMethod("rstTimeout");
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
@@ -30,7 +31,7 @@ public class ServiceStubFactory {
     @SuppressWarnings("unchecked")
     public static <T extends IService> T create(IChannelWriter channelWriter, Class<T> serviceInterface) {
         return (T) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-                                          new Class[]{serviceInterface, IServiceInvoker.class},
+                                          new Class[]{serviceInterface, IServiceHelper.class},
                                           new ServiceInvocationHandler(channelWriter,
                                                                        ServiceRequestManager.getInstance()));
     }
