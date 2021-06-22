@@ -17,7 +17,7 @@ public class ServiceRegistry {
         }
     }
 
-    public RpcServiceProvider findServiceProvider(String serviceName, String methodName) {
+    public RpcServiceProvider findServiceProvider(CharSequence serviceName, CharSequence methodName) {
         return registry.get(serviceName + "#" + methodName);
     }
 

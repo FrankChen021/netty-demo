@@ -3,17 +3,14 @@ package cn.bithon.rpc.channel;
 import cn.bithon.rpc.ServiceRegistry;
 import cn.bithon.rpc.invocation.ServiceInvocationDispatcher;
 import cn.bithon.rpc.invocation.ServiceRequestManager;
+import cn.bithon.rpc.message.ServiceMessage;
 import cn.bithon.rpc.message.ServiceMessageType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import cn.bithon.rpc.message.ServiceRequestMessage;
+import cn.bithon.rpc.message.ServiceResponseMessage;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @ChannelHandler.Sharable
@@ -21,7 +18,6 @@ public class ChannelReader extends ChannelInboundHandlerAdapter {
 
     private final ServiceInvocationDispatcher serviceInvocationDispatcher;
     private boolean channelDebugEnabled;
-    private final ObjectMapper om = new JsonMapper();
 
     public ChannelReader(ServiceRegistry serviceRegistry) {
         this.serviceInvocationDispatcher = new ServiceInvocationDispatcher(serviceRegistry);
@@ -33,26 +29,27 @@ public class ChannelReader extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        try {
-            JsonNode messageJsonNode = om.readTree((byte[]) msg);
+        if (!(msg instanceof ServiceMessage)) {
+            return;
+        }
+
+        ServiceMessage message = (ServiceMessage) msg;
+        if (message.getMessageType() == ServiceMessageType.CLIENT_REQUEST) {
+            ServiceRequestMessage request = (ServiceRequestMessage) message;
             if (channelDebugEnabled) {
-                log.info("receiving: {}", messageJsonNode);
+                log.info("receiving request, txId={}, service={}#{}",
+                         request.getTransactionId(),
+                         request.getServiceName(),
+                         request.getMethodName());
             }
 
-            JsonNode messageTypeNode = messageJsonNode.get("messageType");
-            if (messageTypeNode == null) {
-                return;
+            serviceInvocationDispatcher.dispatch(ctx.channel(), (ServiceRequestMessage) message);
+        } else if (message.getMessageType() == ServiceMessageType.SERVER_RESPONSE) {
+            if (channelDebugEnabled) {
+                log.info("receiving response, txId={}", message.getTransactionId());
             }
 
-            long messageType = messageTypeNode.asLong();
-            if (messageType == ServiceMessageType.CLIENT_REQUEST) {
-                serviceInvocationDispatcher.dispatch(ctx.channel(), messageJsonNode);
-            } else if (messageType == ServiceMessageType.SERVER_RESPONSE) {
-                ServiceRequestManager.getInstance().onResponse(messageJsonNode);
-            }
-        } catch (IOException e) {
-            log.error("Error deserialize message from channel:{}", new java.lang.String((byte[]) msg,
-                                                                                        StandardCharsets.UTF_8));
+            ServiceRequestManager.getInstance().onResponse((ServiceResponseMessage) message);
         }
     }
 

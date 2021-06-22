@@ -10,7 +10,6 @@ import java.util.Scanner;
 public class RpcClientDemo {
 
     private static final String host = "127.0.0.1";
-    private static final int MAX_RETRY = 5;
 
     public static void main(String[] args) {
 

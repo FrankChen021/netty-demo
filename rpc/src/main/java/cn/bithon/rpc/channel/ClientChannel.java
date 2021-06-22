@@ -6,6 +6,8 @@ import cn.bithon.rpc.endpoint.IEndPointProvider;
 import cn.bithon.rpc.endpoint.SingleEndPointProvider;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.invocation.ServiceStubFactory;
+import cn.bithon.rpc.message.ServiceMessageDecoder;
+import cn.bithon.rpc.message.ServiceMessageEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -17,8 +19,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
-import io.netty.handler.codec.bytes.ByteArrayDecoder;
-import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.util.concurrent.Future;
 import lombok.extern.slf4j.Slf4j;
 
@@ -67,8 +67,8 @@ public class ClientChannel implements IChannelWriter, IChannelConnectable, Close
                          ch.pipeline()
                            .addLast("frameDecoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
                          ch.pipeline().addLast("frameEncoder", new LengthFieldPrepender(4));
-                         ch.pipeline().addLast("decoder", new ByteArrayDecoder());
-                         ch.pipeline().addLast("encoder", new ByteArrayEncoder());
+                         ch.pipeline().addLast("decoder", new ServiceMessageDecoder());
+                         ch.pipeline().addLast("encoder", new ServiceMessageEncoder());
                          ch.pipeline().addLast(new ClientChannelManager());
                          ch.pipeline().addLast(new ChannelReader(serviceRegistry));
                      }

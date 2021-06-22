@@ -38,6 +38,7 @@ public class RpcTest {
 
     @After
     public void teardown() {
+        System.out.println("TestCase Teardown...");
         serverChannel.close();
     }
 
@@ -47,7 +48,9 @@ public class RpcTest {
             ICalculator calculator = ch.getRemoteService(ICalculator.class);
             IServiceInvoker invoker = (IServiceInvoker) calculator;
             invoker.debug(true);
+            System.out.println("Start calling");
             Assert.assertEquals(2, calculator.div(6, 3));
+            System.out.println("End calling");
         }
     }
 
@@ -60,7 +63,7 @@ public class RpcTest {
                 calculator.div(6, 0);
                 Assert.assertTrue(false);
             } catch (ServiceInvocationException e) {
-                System.out.println(e.getMessage());
+                System.out.println("Exception Occurred when calling RPC:" + e.getMessage());
                 Assert.assertTrue(e.getMessage().contains("/ by zero"));
             }
         }
@@ -113,6 +116,10 @@ public class RpcTest {
 
             Assert.assertEquals(0, v.get());
         }
-
     }
 }
+
+/**
+ * 1. server端已经有work group，是否还需要自定义的thread pool执行操作？
+ * 2. 自定义的encoder/decoder
+ */

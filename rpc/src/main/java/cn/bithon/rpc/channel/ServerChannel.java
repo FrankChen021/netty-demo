@@ -3,6 +3,8 @@ package cn.bithon.rpc.channel;
 import cn.bithon.rpc.IService;
 import cn.bithon.rpc.ServiceRegistry;
 import cn.bithon.rpc.invocation.ServiceStubFactory;
+import cn.bithon.rpc.message.ServiceMessageDecoder;
+import cn.bithon.rpc.message.ServiceMessageEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -51,8 +53,8 @@ public class ServerChannel implements Closeable {
                     ch.pipeline()
                       .addLast("frameDecoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
                     ch.pipeline().addLast("frameEncoder", new LengthFieldPrepender(4));
-                    ch.pipeline().addLast("decoder", new ByteArrayDecoder());
-                    ch.pipeline().addLast("encoder", new ByteArrayEncoder());
+                    ch.pipeline().addLast("decoder", new ServiceMessageDecoder());
+                    ch.pipeline().addLast("encoder", new ServiceMessageEncoder());
                     ch.pipeline().addLast(channelReader);
                     ch.pipeline().addLast(new ClientServiceManager());
                 }
