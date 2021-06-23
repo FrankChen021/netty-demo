@@ -21,13 +21,17 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Manage inflight requests from a service client to a service provider
+ * <p>
+ * Note: the concept 'client' here is a relative concept.
+ * It could be a network client, which connects to a RPC server,
+ * it could also be a RPC server which calls service provided by a network client
  */
 @Slf4j
-public class ServiceRequestManager {
+public class ClientInvocationManager {
 
-    private static final ServiceRequestManager INSTANCE = new ServiceRequestManager();
+    private static final ClientInvocationManager INSTANCE = new ClientInvocationManager();
 
-    public static ServiceRequestManager getInstance() {
+    public static ClientInvocationManager getInstance() {
         return INSTANCE;
     }
 

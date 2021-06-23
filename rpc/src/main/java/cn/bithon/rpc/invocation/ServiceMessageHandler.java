@@ -54,7 +54,7 @@ public class ServiceMessageHandler extends ChannelInboundHandlerAdapter {
                 log.info("receiving response, txId={}", message.getTransactionId());
             }
 
-            ServiceRequestManager.getInstance().onResponse((ServiceResponseMessage) message);
+            ClientInvocationManager.getInstance().onResponse((ServiceResponseMessage) message);
         }
     }
 

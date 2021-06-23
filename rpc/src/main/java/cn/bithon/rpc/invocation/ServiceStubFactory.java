@@ -7,7 +7,6 @@ import cn.bithon.rpc.channel.IChannelWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceStubFactory {
 
@@ -34,17 +33,17 @@ public class ServiceStubFactory {
         return (T) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
                                           new Class[]{serviceInterface, IServiceHelper.class},
                                           new ServiceInvocationHandler(channelWriter,
-                                                                       ServiceRequestManager.getInstance()));
+                                                                       ClientInvocationManager.getInstance()));
     }
 
     static class ServiceInvocationHandler implements InvocationHandler {
         private final IChannelWriter channelWriter;
-        private final ServiceRequestManager requestManager;
+        private final ClientInvocationManager requestManager;
         private boolean debugEnabled;
         private long timeout = 5000;
 
         public ServiceInvocationHandler(IChannelWriter channelWriter,
-                                        ServiceRequestManager requestManager) {
+                                        ClientInvocationManager requestManager) {
             this.channelWriter = channelWriter;
             this.requestManager = requestManager;
         }
