@@ -1,9 +1,6 @@
 package cn.bithon.rpc.invocation;
 
 import cn.bithon.rpc.ServiceRegistry;
-import cn.bithon.rpc.invocation.IServiceInvoker;
-import cn.bithon.rpc.invocation.ServiceInvocationRunnable;
-import cn.bithon.rpc.invocation.ServiceRequestManager;
 import cn.bithon.rpc.message.ServiceMessage;
 import cn.bithon.rpc.message.ServiceMessageType;
 import cn.bithon.rpc.message.ServiceRequestMessage;
@@ -59,6 +56,11 @@ public class ServiceMessageHandler extends ChannelInboundHandlerAdapter {
 
             ServiceRequestManager.getInstance().onResponse((ServiceResponseMessage) message);
         }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        log.error("Exception occurred when processing message", cause);
     }
 
     public boolean isChannelDebugEnabled() {
