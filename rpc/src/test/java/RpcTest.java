@@ -1,6 +1,7 @@
 import cn.bithon.rpc.IServiceHelper;
 import cn.bithon.rpc.channel.ClientChannel;
 import cn.bithon.rpc.channel.ServerChannel;
+import cn.bithon.rpc.endpoint.EndPoint;
 import cn.bithon.rpc.example.IExampleService;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import org.junit.After;
@@ -157,14 +158,20 @@ public class RpcTest {
             IExampleService calculator = ch.getRemoteService(IExampleService.class);
             Assert.assertEquals(20, calculator.div(100, 5));
 
-            Set<String> clients = serverChannel.getClientEndpoints();
+            Set<EndPoint> clients = serverChannel.getClientEndpoints();
             Assert.assertEquals(1, clients.size());
 
-            String endpoint = clients.stream().findFirst().get();
+            EndPoint endpoint = clients.stream().findFirst().get();
             IExampleService clientCalculator = serverChannel.getRemoteService(endpoint, IExampleService.class);
+
+            //
+            // test service call from server to client
+            //
             Assert.assertEquals(5, clientCalculator.div(100, 20));
 
-
+            //
+            // test service exception thrown from client
+            //
             try {
                 clientCalculator.block(2);
                 Assert.fail("Should not run to here");
@@ -173,6 +180,9 @@ public class RpcTest {
                 Assert.assertTrue(e.getMessage().contains("Not"));
             }
 
+            //
+            // test oneway
+            //
             long start = System.currentTimeMillis();
             clientCalculator.send("server");
             long end = System.currentTimeMillis();

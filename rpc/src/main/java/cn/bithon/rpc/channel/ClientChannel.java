@@ -2,6 +2,7 @@ package cn.bithon.rpc.channel;
 
 import cn.bithon.rpc.IService;
 import cn.bithon.rpc.ServiceRegistry;
+import cn.bithon.rpc.endpoint.EndPoint;
 import cn.bithon.rpc.endpoint.IEndPointProvider;
 import cn.bithon.rpc.endpoint.SingleEndPointProvider;
 import cn.bithon.rpc.exception.ServiceInvocationException;
@@ -120,7 +121,7 @@ public class ClientChannel implements IChannelWriter, IChannelConnectable, Close
 
     private void doConnect(int maxRetry) {
         for (int i = 0; i < maxRetry; i++) {
-            IEndPointProvider.Endpoint endpoint = endPointProvider.getEndpoint();
+            EndPoint endpoint = endPointProvider.getEndpoint();
             try {
                 Future<?> connectFuture = bootstrap.connect(endpoint.getHost(), endpoint.getPort());
                 connectFuture.await(200, TimeUnit.MILLISECONDS);

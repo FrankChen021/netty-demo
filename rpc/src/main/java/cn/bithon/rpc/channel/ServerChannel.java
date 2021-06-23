@@ -2,6 +2,7 @@ package cn.bithon.rpc.channel;
 
 import cn.bithon.rpc.IService;
 import cn.bithon.rpc.ServiceRegistry;
+import cn.bithon.rpc.endpoint.EndPoint;
 import cn.bithon.rpc.invocation.ServiceMessageHandler;
 import cn.bithon.rpc.invocation.ServiceStubFactory;
 import cn.bithon.rpc.message.ServiceMessageDecoder;
@@ -21,6 +22,7 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 
 import java.io.Closeable;
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -105,29 +107,31 @@ public class ServerChannel implements Closeable {
         private final Map<Class<? extends IService>, IService> services = new ConcurrentHashMap<>();
     }
 
-    private final Map<String, ClientService> clientServices = new ConcurrentHashMap<>();
+    private final Map<EndPoint, ClientService> clientServices = new ConcurrentHashMap<>();
 
-    public Set<String> getClientEndpoints() {
+    public Set<EndPoint> getClientEndpoints() {
         return clientServices.keySet();
     }
 
     class ClientServiceManager extends ChannelInboundHandlerAdapter {
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            Channel channel = ctx.channel();
-            clientServices.computeIfAbsent(channel.remoteAddress().toString(), key -> new ClientService(channel));
+            InetSocketAddress socketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+            clientServices.computeIfAbsent(EndPoint.of(socketAddress),
+                                           key -> new ClientService(ctx.channel()));
             super.channelActive(ctx);
         }
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            clientServices.remove(ctx.channel().remoteAddress().toString());
+            InetSocketAddress socketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+            clientServices.remove(EndPoint.of(socketAddress));
             super.channelInactive(ctx);
         }
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends IService> T getRemoteService(String clientEndpoint, Class<T> serviceClass) {
+    public <T extends IService> T getRemoteService(EndPoint clientEndpoint, Class<T> serviceClass) {
         ClientService clientService = clientServices.get(clientEndpoint);
         if (clientService == null) {
             return null;

@@ -1,4 +1,5 @@
 import cn.bithon.rpc.channel.ServerChannel;
+import cn.bithon.rpc.endpoint.EndPoint;
 import cn.bithon.rpc.example.IExampleService;
 import cn.bithon.rpc.example.INotification;
 
@@ -38,7 +39,7 @@ public class RpcServerDemo {
                 break;
             }
 
-            for (String clientEndpoint : serverChannel.getClientEndpoints()) {
+            for (EndPoint clientEndpoint : serverChannel.getClientEndpoints()) {
                 INotification notification = serverChannel.getRemoteService(clientEndpoint, INotification.class);
                 notification.notify(line);
             }
