@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Should only be used at the client side
  */
 @Slf4j
-public class ClientChannel implements IChannelWriter, IChannelConnectable, Closeable {
+public class ClientChannel implements IChannelWriter, Closeable {
 
     //
     // channel

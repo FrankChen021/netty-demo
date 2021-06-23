@@ -1,7 +1,6 @@
 package cn.bithon.rpc.invocation;
 
 import cn.bithon.rpc.Oneway;
-import cn.bithon.rpc.channel.IChannelConnectable;
 import cn.bithon.rpc.channel.IChannelWriter;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.exception.TimeoutException;
@@ -61,15 +60,20 @@ public class ClientInvocationManager {
         }
     }
 
-    private final AtomicLong transactionId = new AtomicLong();
+    private final AtomicLong transactionId = new AtomicLong(21515);
     private final ObjectMapper om = new JsonMapper();
     private final Map<Method, MethodMeta> methodMetadata = new ConcurrentHashMap<>();
     private final Map<Long, InflightRequest> inflightRequests = new ConcurrentHashMap<>();
 
     public Object invoke(IChannelWriter channelWriter, boolean debug, long timeout, Method method, Object[] args) {
-        if (channelWriter instanceof IChannelConnectable) {
-            ((IChannelConnectable) channelWriter).connect();
-        }
+        //
+        // make sure channel has been established
+        //
+        channelWriter.connect();
+
+        //
+        // check channel status
+        //
         Channel ch = channelWriter.getChannel();
         if (ch == null) {
             throw new ServiceInvocationException("Failed to invoke %s#%s due to channel is empty",

@@ -4,6 +4,8 @@ import io.netty.channel.Channel;
 
 public interface IChannelWriter {
 
+    void connect();
+
     /**
      * get underlying channel object
      */

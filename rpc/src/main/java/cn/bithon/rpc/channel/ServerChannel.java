@@ -139,6 +139,11 @@ public class ServerChannel implements Closeable {
         return (T) clientService.services.computeIfAbsent(serviceClass,
                                                           key -> ServiceStubFactory.create(new IChannelWriter() {
                                                                                                @Override
+                                                                                               public void connect() {
+                                                                                                   //do nothing for a server channel
+                                                                                               }
+
+                                                                                               @Override
                                                                                                public Channel getChannel() {
                                                                                                    return clientService.channel;
                                                                                                }
