@@ -50,19 +50,8 @@ public class ClientInvocationManager {
         CharSequence exception;
     }
 
-    static class MethodMeta {
-        boolean isOneway;
-        Class<?> returnType;
-
-        public MethodMeta(Method method) {
-            this.isOneway = method.getAnnotation(Oneway.class) != null;
-            this.returnType = method.getReturnType();
-        }
-    }
-
     private final AtomicLong transactionId = new AtomicLong(21515);
     private final ObjectMapper om = new JsonMapper();
-    private final Map<Method, MethodMeta> methodMetadata = new ConcurrentHashMap<>();
     private final Map<Long, InflightRequest> inflightRequests = new ConcurrentHashMap<>();
 
     public Object invoke(IChannelWriter channelWriter, boolean debug, long timeout, Method method, Object[] args) {
@@ -99,14 +88,14 @@ public class ClientInvocationManager {
                                                                     .args(args)
                                                                     .build();
 
-        MethodMeta meta = methodMetadata.computeIfAbsent(method, MethodMeta::new);
+        boolean isOneway = method.getAnnotation(Oneway.class) != null;
         InflightRequest inflightRequest = null;
-        if (!meta.isOneway) {
+        if (!isOneway) {
             inflightRequest = new InflightRequest();
             inflightRequest.requestAt = System.currentTimeMillis();
             inflightRequest.methodName = serviceRequest.getMethodName();
             inflightRequest.serviceName = serviceRequest.getServiceName();
-            inflightRequest.returnObjType = meta.returnType;
+            inflightRequest.returnObjType = method.getReturnType();
             this.inflightRequests.put(serviceRequest.getTransactionId(), inflightRequest);
         }
         if (debug) {

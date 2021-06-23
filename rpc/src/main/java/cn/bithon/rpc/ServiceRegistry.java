@@ -7,17 +7,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceRegistry {
 
-    private final Map<String, RpcServiceProvider> registry = new ConcurrentHashMap<>();
+    private final Map<String, RegistryItem> registry = new ConcurrentHashMap<>();
 
     public <T extends IService> void addService(Class<T> serviceType, T serviceImpl) {
         // override methods are not supported
         for (Method method : serviceType.getDeclaredMethods()) {
-            registry.put(serviceType.getSimpleName() + "#" + method.getName(), new RpcServiceProvider(method,
-                                                                                                      serviceImpl));
+            registry.put(serviceType.getSimpleName() + "#" + method.getName(), new RegistryItem(method,
+                                                                                                serviceImpl));
         }
     }
 
-    public RpcServiceProvider findServiceProvider(CharSequence serviceName, CharSequence methodName) {
+    public RegistryItem findServiceProvider(CharSequence serviceName, CharSequence methodName) {
         return registry.get(serviceName + "#" + methodName);
     }
 
@@ -39,16 +39,16 @@ public class ServiceRegistry {
         }
     }
 
-    public static class RpcServiceProvider {
+    public static class RegistryItem {
         private final Method method;
         private final Object serviceImpl;
-        private final boolean isReturnVoid;
+        private final boolean isOneway;
         private final ParameterType[] parameterTypes;
 
-        public RpcServiceProvider(Method method, Object serviceImpl) {
+        public RegistryItem(Method method, Object serviceImpl) {
             this.method = method;
             this.serviceImpl = serviceImpl;
-            this.isReturnVoid = method.getReturnType().equals(Void.TYPE);
+            this.isOneway = method.getAnnotation(Oneway.class) != null;
             this.parameterTypes = new ParameterType[method.getParameterCount()];
 
             Class<?>[] parameterRawTypes = method.getParameterTypes();
@@ -62,8 +62,8 @@ public class ServiceRegistry {
             return method.invoke(serviceImpl, args);
         }
 
-        public boolean isReturnVoid() {
-            return isReturnVoid;
+        public boolean isOneway() {
+            return isOneway;
         }
 
         public ParameterType[] getParameterTypes() {

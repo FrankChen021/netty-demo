@@ -49,7 +49,7 @@ public class ServiceInvocationRunnable implements Runnable {
                 throw new BadRequestException("methodName is null");
             }
 
-            ServiceRegistry.RpcServiceProvider serviceProvider = serviceRegistry.findServiceProvider(
+            ServiceRegistry.RegistryItem serviceProvider = serviceRegistry.findServiceProvider(
                 serviceRequest.getServiceName(),
                 serviceRequest.getMethodName());
             if (serviceProvider == null) {
@@ -77,7 +77,7 @@ public class ServiceInvocationRunnable implements Runnable {
                                                      e.getTargetException().toString());
             }
 
-            if (!serviceProvider.isReturnVoid()) {
+            if (!serviceProvider.isOneway()) {
                 sendResponse(ServiceResponseMessage.builder()
                                                    .serverResponseAt(System.currentTimeMillis())
                                                    .transactionId(serviceRequest.getTransactionId())

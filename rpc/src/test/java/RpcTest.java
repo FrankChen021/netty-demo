@@ -4,9 +4,9 @@ import cn.bithon.rpc.channel.ServerChannel;
 import cn.bithon.rpc.endpoint.EndPoint;
 import cn.bithon.rpc.example.IExampleService;
 import cn.bithon.rpc.exception.ServiceInvocationException;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -16,10 +16,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class RpcTest {
 
-    ServerChannel serverChannel;
+    static ServerChannel serverChannel;
 
-    @Before
-    public void setup() {
+    @BeforeClass
+    public static void setup() {
         serverChannel = new ServerChannel()
             .bindService(IExampleService.class, new IExampleService() {
 
@@ -44,8 +44,8 @@ public class RpcTest {
             }).start(8070).debug(true);
     }
 
-    @After
-    public void teardown() {
+    @AfterClass
+    public static void teardown() {
         System.out.println("TestCase Teardown...");
         serverChannel.close();
     }
@@ -127,7 +127,7 @@ public class RpcTest {
     }
 
     /**
-     * TODO：server--call-->client
+     * server--call-->client
      */
     @Test
     public void testServerCallsClient() {
@@ -192,13 +192,8 @@ public class RpcTest {
             //wait for client execution completion
             try {
                 Thread.sleep(5000);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
     }
 }
-
-/**
- * 1. nowait
- * 2. future
- */

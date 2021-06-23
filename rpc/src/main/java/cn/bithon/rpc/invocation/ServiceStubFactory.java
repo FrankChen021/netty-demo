@@ -38,14 +38,14 @@ public class ServiceStubFactory {
 
     static class ServiceInvocationHandler implements InvocationHandler {
         private final IChannelWriter channelWriter;
-        private final ClientInvocationManager requestManager;
+        private final ClientInvocationManager clientInvocationManager;
         private boolean debugEnabled;
         private long timeout = 5000;
 
         public ServiceInvocationHandler(IChannelWriter channelWriter,
-                                        ClientInvocationManager requestManager) {
+                                        ClientInvocationManager clientInvocationManager) {
             this.channelWriter = channelWriter;
-            this.requestManager = requestManager;
+            this.clientInvocationManager = clientInvocationManager;
         }
 
         @Override
@@ -68,7 +68,7 @@ public class ServiceStubFactory {
                 this.timeout = 5000;
                 return null;
             }
-            return requestManager.invoke(channelWriter, debugEnabled, timeout, method, args);
+            return clientInvocationManager.invoke(channelWriter, debugEnabled, timeout, method, args);
         }
     }
 }
