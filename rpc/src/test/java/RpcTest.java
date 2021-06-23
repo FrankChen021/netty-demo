@@ -1,13 +1,15 @@
+import cn.bithon.rpc.IServiceHelper;
 import cn.bithon.rpc.channel.ClientChannel;
 import cn.bithon.rpc.channel.ServerChannel;
 import cn.bithon.rpc.example.ICalculator;
 import cn.bithon.rpc.exception.ServiceInvocationException;
-import cn.bithon.rpc.IServiceHelper;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -18,7 +20,7 @@ public class RpcTest {
     @Before
     public void setup() {
         serverChannel = new ServerChannel()
-            .addService(ICalculator.class, new ICalculator() {
+            .bindService(ICalculator.class, new ICalculator() {
 
                 @Override
                 public int div(int a, int b) {
@@ -121,4 +123,32 @@ public class RpcTest {
     /**
      * TODO：server--call-->client
      */
+    @Test
+    public void testServerCallsClient() {
+        try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
+            // bind a service at client side
+            ch.bindService(ICalculator.class, new ICalculator() {
+                @Override
+                public int div(int a, int b) {
+                    return a / b;
+                }
+
+                @Override
+                public int block(int timeout) {
+                    throw new NotImplementedException();
+                }
+            });
+
+            //make sure the client has been connected to the server
+            ICalculator calculator = ch.getRemoteService(ICalculator.class);
+            Assert.assertEquals(20, calculator.div(100, 5));
+
+            Set<String> clients = serverChannel.getClientEndpoints();
+            Assert.assertEquals(1, clients.size());
+
+            String endpoint = clients.stream().findFirst().get();
+            ICalculator clientCalculator = serverChannel.getRemoteService(endpoint, ICalculator.class);
+            Assert.assertEquals(5, clientCalculator.div(100, 20));
+        }
+    }
 }
