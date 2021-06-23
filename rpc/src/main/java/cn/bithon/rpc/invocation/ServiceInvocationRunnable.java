@@ -9,17 +9,25 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.netty.channel.Channel;
-import lombok.AllArgsConstructor;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
-@AllArgsConstructor
 public class ServiceInvocationRunnable implements Runnable {
     private final ObjectMapper om;
     private final ServiceRegistry serviceRegistry;
     private final Channel channel;
     private final ServiceRequestMessage serviceRequest;
+
+    public ServiceInvocationRunnable(ObjectMapper om,
+                                     ServiceRegistry serviceRegistry,
+                                     Channel channel,
+                                     ServiceRequestMessage serviceRequest) {
+        this.om = om;
+        this.serviceRegistry = serviceRegistry;
+        this.channel = channel;
+        this.serviceRequest = serviceRequest;
+    }
 
     public Channel getChannel() {
         return channel;

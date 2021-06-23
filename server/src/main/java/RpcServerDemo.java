@@ -7,7 +7,7 @@ import java.util.Scanner;
 public class RpcServerDemo {
     public static void main(String[] args) {
         ServerChannel serverChannel = new ServerChannel()
-            .addService(ICalculator.class, new ICalculator() {
+            .bindService(ICalculator.class, new ICalculator() {
 
                 @Override
                 public int div(int a, int b) {

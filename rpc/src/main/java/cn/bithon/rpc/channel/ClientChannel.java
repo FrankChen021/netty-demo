@@ -5,8 +5,8 @@ import cn.bithon.rpc.ServiceRegistry;
 import cn.bithon.rpc.endpoint.IEndPointProvider;
 import cn.bithon.rpc.endpoint.SingleEndPointProvider;
 import cn.bithon.rpc.exception.ServiceInvocationException;
+import cn.bithon.rpc.invocation.ServiceMessageHandler;
 import cn.bithon.rpc.invocation.ServiceStubFactory;
-import cn.bithon.rpc.invocation.ThreadPoolServiceInvoker;
 import cn.bithon.rpc.message.ServiceMessageDecoder;
 import cn.bithon.rpc.message.ServiceMessageEncoder;
 import io.netty.bootstrap.Bootstrap;
@@ -73,13 +73,7 @@ public class ClientChannel implements IChannelWriter, IChannelConnectable, Close
                          pipeline.addLast("decoder", new ServiceMessageDecoder());
                          pipeline.addLast("encoder", new ServiceMessageEncoder());
                          pipeline.addLast(new ClientChannelManager());
-
-                         pipeline.addLast(new ChannelReader(serviceRegistry,
-                                                            // 客户端使用线程池处理服务端调用
-                                                            new ThreadPoolServiceInvoker(Runtime
-                                                                                             .getRuntime()
-                                                                                             .availableProcessors()
-                                                                                         - 1)));
+                         pipeline.addLast(new ServiceMessageHandler(serviceRegistry));
                      }
                  });
     }
