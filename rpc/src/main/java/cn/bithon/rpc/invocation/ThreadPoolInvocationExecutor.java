@@ -10,11 +10,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class ThreadPoolServiceInvoker implements IServiceInvoker {
+public class ThreadPoolInvocationExecutor implements IServiceInvocationExecutor {
 
     private final Executor executor;
 
-    public ThreadPoolServiceInvoker(int threadPoolSize) {
+    public ThreadPoolInvocationExecutor(int threadPoolSize) {
         executor = new ThreadPoolExecutor(threadPoolSize,
                                           threadPoolSize,
                                           0L,

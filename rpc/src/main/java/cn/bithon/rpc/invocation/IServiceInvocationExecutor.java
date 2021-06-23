@@ -1,5 +1,5 @@
 package cn.bithon.rpc.invocation;
 
-public interface IServiceInvoker {
+public interface IServiceInvocationExecutor {
     void invoke(ServiceInvocationRunnable runnable);
 }

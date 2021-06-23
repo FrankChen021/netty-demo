@@ -1,6 +1,9 @@
-package cn.bithon.rpc.invocation;
+package cn.bithon.rpc.channel;
 
 import cn.bithon.rpc.ServiceRegistry;
+import cn.bithon.rpc.invocation.ClientInvocationManager;
+import cn.bithon.rpc.invocation.IServiceInvocationExecutor;
+import cn.bithon.rpc.invocation.ServiceInvocationRunnable;
 import cn.bithon.rpc.message.ServiceMessage;
 import cn.bithon.rpc.message.ServiceMessageType;
 import cn.bithon.rpc.message.ServiceRequestMessage;
@@ -13,18 +16,18 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @ChannelHandler.Sharable
-public class ServiceMessageHandler extends ChannelInboundHandlerAdapter {
+public class ServiceMessageChannelHandler extends ChannelInboundHandlerAdapter {
 
-    private final IServiceInvoker invoker;
+    private final IServiceInvocationExecutor invoker;
     private final ServiceRegistry serviceRegistry;
     private final ObjectMapper om = new ObjectMapper();
     private boolean channelDebugEnabled;
 
-    public ServiceMessageHandler(ServiceRegistry serviceRegistry) {
+    public ServiceMessageChannelHandler(ServiceRegistry serviceRegistry) {
         this(serviceRegistry, ServiceInvocationRunnable::run);
     }
 
-    public ServiceMessageHandler(ServiceRegistry serviceRegistry, IServiceInvoker dispatcher) {
+    public ServiceMessageChannelHandler(ServiceRegistry serviceRegistry, IServiceInvocationExecutor dispatcher) {
         this.serviceRegistry = serviceRegistry;
         this.invoker = dispatcher;
     }

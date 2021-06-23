@@ -3,7 +3,6 @@ package cn.bithon.rpc.channel;
 import cn.bithon.rpc.IService;
 import cn.bithon.rpc.ServiceRegistry;
 import cn.bithon.rpc.endpoint.EndPoint;
-import cn.bithon.rpc.invocation.ServiceMessageHandler;
 import cn.bithon.rpc.invocation.ServiceStubFactory;
 import cn.bithon.rpc.message.ServiceMessageDecoder;
 import cn.bithon.rpc.message.ServiceMessageEncoder;
@@ -36,7 +35,7 @@ public class ServerChannel implements Closeable {
     /**
      * 服务端的请求直接在worker线程中处理，无需单独定义线程池
      */
-    private final ServiceMessageHandler channelReader = new ServiceMessageHandler(serviceRegistry);
+    private final ServiceMessageChannelHandler channelReader = new ServiceMessageChannelHandler(serviceRegistry);
 
     public <T extends IService> ServerChannel bindService(Class<T> interfaceClass, T impl) {
         serviceRegistry.addService(interfaceClass, impl);
