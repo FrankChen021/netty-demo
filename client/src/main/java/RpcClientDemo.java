@@ -1,5 +1,5 @@
 import cn.bithon.rpc.channel.ClientChannel;
-import cn.bithon.rpc.example.ICalculator;
+import cn.bithon.rpc.example.IExampleService;
 import cn.bithon.rpc.example.INotification;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.invocation.ServiceStubFactory;
@@ -26,7 +26,7 @@ public class RpcClientDemo {
             .configureRetry(60, Duration.ofMillis(500));
 
         //channelProvider.debug(true);
-        ICalculator calculator = ServiceStubFactory.create(channelProvider, ICalculator.class);
+        IExampleService exampleService = ServiceStubFactory.create(channelProvider, IExampleService.class);
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("method=");
@@ -35,7 +35,7 @@ public class RpcClientDemo {
                 System.out.print("timeout=");
                 int timeout = scanner.nextInt();
                 try {
-                    calculator.block(timeout);
+                    exampleService.block(timeout);
                 } catch (ServiceInvocationException e) {
                     System.out.println(e);
                 }
@@ -47,7 +47,7 @@ public class RpcClientDemo {
 
                 long s = System.currentTimeMillis();
                 for (int i = 0; i < 1000; i++) {
-                    int c = calculator.div(a, b);
+                    int c = exampleService.div(a, b);
                 }
                 long e = System.currentTimeMillis();
                 System.out.printf("time=%d", e - s);

@@ -7,6 +7,7 @@ import cn.bithon.rpc.channel.IChannelWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceStubFactory {
 

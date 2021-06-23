@@ -1,5 +1,6 @@
 package cn.bithon.rpc.invocation;
 
+import cn.bithon.rpc.Oneway;
 import cn.bithon.rpc.channel.IChannelConnectable;
 import cn.bithon.rpc.channel.IChannelWriter;
 import cn.bithon.rpc.exception.ServiceInvocationException;
@@ -46,8 +47,19 @@ public class ServiceRequestManager {
         CharSequence exception;
     }
 
+    static class MethodMeta {
+        boolean isOneway;
+        Class<?> returnType;
+
+        public MethodMeta(Method method) {
+            this.isOneway = method.getAnnotation(Oneway.class) != null;
+            this.returnType = method.getReturnType();
+        }
+    }
+
     private final AtomicLong transactionId = new AtomicLong();
     private final ObjectMapper om = new JsonMapper();
+    private final Map<Method, MethodMeta> methodMetadata = new ConcurrentHashMap<>();
     private final Map<Long, InflightRequest> inflightRequests = new ConcurrentHashMap<>();
 
     public Object invoke(IChannelWriter channelWriter, boolean debug, long timeout, Method method, Object[] args) {
@@ -72,20 +84,21 @@ public class ServiceRequestManager {
         }
 
         ServiceRequestMessage serviceRequest = ServiceRequestMessage.builder()
-                                                                    .serviceName(method.getDeclaringClass().getSimpleName())
+                                                                    .serviceName(method.getDeclaringClass()
+                                                                                       .getSimpleName())
                                                                     .methodName(method.getName())
                                                                     .transactionId(transactionId.incrementAndGet())
                                                                     .args(args)
                                                                     .build();
-        Class<?> returnType = method.getReturnType();
-        boolean isReturnVoid = returnType.equals(Void.TYPE);
+
+        MethodMeta meta = methodMetadata.computeIfAbsent(method, MethodMeta::new);
         InflightRequest inflightRequest = null;
-        if (!isReturnVoid) {
+        if (!meta.isOneway) {
             inflightRequest = new InflightRequest();
             inflightRequest.requestAt = System.currentTimeMillis();
             inflightRequest.methodName = serviceRequest.getMethodName();
             inflightRequest.serviceName = serviceRequest.getServiceName();
-            inflightRequest.returnObjType = returnType;
+            inflightRequest.returnObjType = meta.returnType;
             this.inflightRequests.put(serviceRequest.getTransactionId(), inflightRequest);
         }
         if (debug) {

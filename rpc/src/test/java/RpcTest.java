@@ -1,7 +1,7 @@
 import cn.bithon.rpc.IServiceHelper;
 import cn.bithon.rpc.channel.ClientChannel;
 import cn.bithon.rpc.channel.ServerChannel;
-import cn.bithon.rpc.example.ICalculator;
+import cn.bithon.rpc.example.IExampleService;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import org.junit.After;
 import org.junit.Assert;
@@ -20,7 +20,7 @@ public class RpcTest {
     @Before
     public void setup() {
         serverChannel = new ServerChannel()
-            .bindService(ICalculator.class, new ICalculator() {
+            .bindService(IExampleService.class, new IExampleService() {
 
                 @Override
                 public int div(int a, int b) {
@@ -35,6 +35,11 @@ public class RpcTest {
                     }
                     return 0;
                 }
+
+                @Override
+                public void send(String msg) {
+                    System.out.println("got message from client: ");
+                }
             }).start(8070).debug(true);
     }
 
@@ -47,7 +52,7 @@ public class RpcTest {
     @Test
     public void test() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
-            ICalculator calculator = ch.getRemoteService(ICalculator.class);
+            IExampleService calculator = ch.getRemoteService(IExampleService.class);
             IServiceHelper invoker = (IServiceHelper) calculator;
             invoker.debug(true);
             System.out.println("Start calling");
@@ -59,11 +64,11 @@ public class RpcTest {
     @Test
     public void testInvocationException() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
-            ICalculator calculator = ch.getRemoteService(ICalculator.class);
+            IExampleService calculator = ch.getRemoteService(IExampleService.class);
 
             try {
                 calculator.div(6, 0);
-                Assert.assertTrue(false);
+                Assert.fail();
             } catch (ServiceInvocationException e) {
                 System.out.println("Exception Occurred when calling RPC:" + e.getMessage());
                 Assert.assertTrue(e.getMessage().contains("/ by zero"));
@@ -74,13 +79,13 @@ public class RpcTest {
     @Test
     public void testClientSideTimeout() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
-            ICalculator calculator = ch.getRemoteService(ICalculator.class);
+            IExampleService calculator = ch.getRemoteService(IExampleService.class);
 
             calculator.block(2);
 
             try {
                 calculator.block(6);
-                Assert.assertTrue(false);
+                Assert.fail();
             } catch (ServiceInvocationException e) {
                 Assert.assertTrue(true);
             }
@@ -88,7 +93,7 @@ public class RpcTest {
             calculator.toInvoker().setTimeout(2000);
             try {
                 calculator.block(3);
-                Assert.assertTrue(false);
+                Assert.fail();
             } catch (ServiceInvocationException e) {
                 Assert.assertTrue(true);
             }
@@ -98,7 +103,7 @@ public class RpcTest {
     @Test
     public void testConcurrent() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
-            ICalculator calculator = ch.getRemoteService(ICalculator.class);
+            IExampleService calculator = ch.getRemoteService(IExampleService.class);
 
             AtomicInteger v = new AtomicInteger();
             AtomicInteger i = new AtomicInteger();
@@ -127,7 +132,7 @@ public class RpcTest {
     public void testServerCallsClient() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
             // bind a service at client side
-            ch.bindService(ICalculator.class, new ICalculator() {
+            ch.bindService(IExampleService.class, new IExampleService() {
                 @Override
                 public int div(int a, int b) {
                     return a / b;
@@ -137,18 +142,53 @@ public class RpcTest {
                 public int block(int timeout) {
                     throw new NotImplementedException();
                 }
+
+                @Override
+                public void send(String msg) {
+                    System.out.println("Client got server message:" + msg);
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException ignored) {
+                    }
+                }
             });
 
             //make sure the client has been connected to the server
-            ICalculator calculator = ch.getRemoteService(ICalculator.class);
+            IExampleService calculator = ch.getRemoteService(IExampleService.class);
             Assert.assertEquals(20, calculator.div(100, 5));
 
             Set<String> clients = serverChannel.getClientEndpoints();
             Assert.assertEquals(1, clients.size());
 
             String endpoint = clients.stream().findFirst().get();
-            ICalculator clientCalculator = serverChannel.getRemoteService(endpoint, ICalculator.class);
+            IExampleService clientCalculator = serverChannel.getRemoteService(endpoint, IExampleService.class);
             Assert.assertEquals(5, clientCalculator.div(100, 20));
+
+
+            try {
+                clientCalculator.block(2);
+                Assert.fail("Should not run to here");
+            } catch (ServiceInvocationException e) {
+                System.out.println(e.getMessage());
+                Assert.assertTrue(e.getMessage().contains("Not"));
+            }
+
+            long start = System.currentTimeMillis();
+            clientCalculator.send("server");
+            long end = System.currentTimeMillis();
+            // since 'send' is a oneway method, its implementation blocking for 10 second won't affect server side running time
+            Assert.assertTrue(end - start < 1000);
+
+            //wait for client execution completion
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+            }
         }
     }
 }
+
+/**
+ * 1. nowait
+ * 2. future
+ */

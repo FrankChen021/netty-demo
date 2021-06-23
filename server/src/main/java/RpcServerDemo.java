@@ -1,5 +1,5 @@
 import cn.bithon.rpc.channel.ServerChannel;
-import cn.bithon.rpc.example.ICalculator;
+import cn.bithon.rpc.example.IExampleService;
 import cn.bithon.rpc.example.INotification;
 
 import java.util.Scanner;
@@ -7,7 +7,7 @@ import java.util.Scanner;
 public class RpcServerDemo {
     public static void main(String[] args) {
         ServerChannel serverChannel = new ServerChannel()
-            .bindService(ICalculator.class, new ICalculator() {
+            .bindService(IExampleService.class, new IExampleService() {
 
                 @Override
                 public int div(int a, int b) {
@@ -21,6 +21,11 @@ public class RpcServerDemo {
                     } catch (InterruptedException e) {
                     }
                     return 0;
+                }
+
+                @Override
+                public void send(String msg) {
+
                 }
             }).start(8070);
 
