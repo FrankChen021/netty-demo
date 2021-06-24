@@ -1,6 +1,6 @@
 package cn.bithon.rpc;
 
-public interface IServiceHelper {
+public interface IServiceController {
     void debug(boolean on);
 
     /**

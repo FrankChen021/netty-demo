@@ -1,4 +1,5 @@
-import cn.bithon.rpc.IServiceHelper;
+package cn.bithon.rpc;
+
 import cn.bithon.rpc.channel.ClientChannel;
 import cn.bithon.rpc.channel.ServerChannel;
 import cn.bithon.rpc.endpoint.EndPoint;
@@ -37,7 +38,7 @@ public class RpcTest {
     public void test() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
             IExampleService example = ch.getRemoteService(IExampleService.class);
-            IServiceHelper invoker = (IServiceHelper) example;
+            IServiceController invoker = (IServiceController) example;
             invoker.debug(true);
             System.out.println("Start calling");
             Assert.assertEquals(2, example.div(6, 3));
@@ -87,7 +88,7 @@ public class RpcTest {
                 Assert.assertTrue(true);
             }
 
-            calculator.toInvoker().setTimeout(2000);
+            calculator.toController().setTimeout(2000);
             try {
                 calculator.block(3);
                 Assert.fail();
