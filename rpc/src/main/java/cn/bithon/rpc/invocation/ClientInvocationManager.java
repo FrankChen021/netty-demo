@@ -80,10 +80,11 @@ public class ClientInvocationManager {
                                                  method.getName());
         }
 
+        // TODO: cache method.toString()
         ServiceRequestMessage serviceRequest = ServiceRequestMessage.builder()
                                                                     .serviceName(method.getDeclaringClass()
                                                                                        .getSimpleName())
-                                                                    .methodName(method.getName())
+                                                                    .methodName(method.toString())
                                                                     .transactionId(transactionId.incrementAndGet())
                                                                     .args(args)
                                                                     .build();

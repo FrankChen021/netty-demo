@@ -1,10 +1,13 @@
 package cn.bithon.rpc;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 public class ServiceRegistry {
 
     private final Map<String, RegistryItem> registry = new ConcurrentHashMap<>();
@@ -12,13 +15,16 @@ public class ServiceRegistry {
     public <T extends IService> void addService(Class<T> serviceType, T serviceImpl) {
         // override methods are not supported
         for (Method method : serviceType.getDeclaredMethods()) {
-            registry.put(serviceType.getSimpleName() + "#" + method.getName(), new RegistryItem(method,
-                                                                                                serviceImpl));
+            String qualifiedName = method.toString();
+            RegistryItem item = registry.put(qualifiedName, new RegistryItem(method, serviceImpl));
+            if (item != null) {
+                log.error("{} is overwritten", item.method);
+            }
         }
     }
 
     public RegistryItem findServiceProvider(CharSequence serviceName, CharSequence methodName) {
-        return registry.get(serviceName + "#" + methodName);
+        return registry.get(methodName);
     }
 
     public static class ParameterType {
