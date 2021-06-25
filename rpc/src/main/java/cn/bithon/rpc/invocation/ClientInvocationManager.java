@@ -4,8 +4,8 @@ import cn.bithon.rpc.Oneway;
 import cn.bithon.rpc.channel.IChannelWriter;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.exception.TimeoutException;
-import cn.bithon.rpc.message.ServiceRequestMessage;
-import cn.bithon.rpc.message.ServiceResponseMessage;
+import cn.bithon.rpc.message.ServiceRequestMessageOut;
+import cn.bithon.rpc.message.ServiceResponseMessageIn;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.netty.channel.Channel;
@@ -64,13 +64,12 @@ public class ClientInvocationManager {
         }
 
         // TODO: cache method.toString()
-        ServiceRequestMessage serviceRequest = ServiceRequestMessage.builder()
-                                                                    .serviceName(method.getDeclaringClass()
-                                                                                       .getSimpleName())
-                                                                    .methodName(method.toString())
-                                                                    .transactionId(transactionId.incrementAndGet())
-                                                                    .args(args)
-                                                                    .build();
+        ServiceRequestMessageOut serviceRequest = ServiceRequestMessageOut.builder()
+                                                                          .serviceName(method.getDeclaringClass().getSimpleName())
+                                                                          .methodName(method.toString())
+                                                                          .transactionId(transactionId.incrementAndGet())
+                                                                          .args(args)
+                                                                          .build();
 
         boolean isOneway = method.getAnnotation(Oneway.class) != null;
         InflightRequest inflightRequest = null;
@@ -116,7 +115,7 @@ public class ClientInvocationManager {
         return null;
     }
 
-    public void onResponse(ServiceResponseMessage response) {
+    public void onResponse(ServiceResponseMessageIn response) {
         long txId = response.getTransactionId();
         InflightRequest inflightRequest = inflightRequests.remove(txId);
         if (inflightRequest == null) {

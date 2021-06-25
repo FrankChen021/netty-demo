@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import lombok.SneakyThrows;
 
-public class ServiceResponseMessage extends ServiceMessage {
+public class ServiceResponseMessageOut extends ServiceMessageOut {
     private long serverResponseAt;
     private byte[] returning;
     private CharSequence exception;
@@ -26,16 +26,6 @@ public class ServiceResponseMessage extends ServiceMessage {
         out.writeLong(serverResponseAt);
         writeBytes(this.returning, out);
         writeString(this.exception, out);
-    }
-
-    @Override
-    public ServiceMessage decode(ByteBuf in) {
-        this.transactionId = in.readLong();
-
-        this.serverResponseAt = in.readLong();
-        this.returning = readBytes(in);
-        this.exception = readString(in);
-        return this;
     }
 
     public long getServerResponseAt() {
@@ -63,7 +53,7 @@ public class ServiceResponseMessage extends ServiceMessage {
     }
 
     static public class Builder {
-        ServiceResponseMessage response = new ServiceResponseMessage();
+        ServiceResponseMessageOut response = new ServiceResponseMessageOut();
 
         public Builder serverResponseAt(long currentTimeMillis) {
             response.serverResponseAt = currentTimeMillis;
@@ -80,7 +70,7 @@ public class ServiceResponseMessage extends ServiceMessage {
             return this;
         }
 
-        public ServiceResponseMessage build() {
+        public ServiceResponseMessageOut build() {
             return response;
         }
 

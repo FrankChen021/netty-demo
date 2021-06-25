@@ -2,17 +2,26 @@ package cn.bithon.rpc.message;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
-import lombok.SneakyThrows;
 
-public class ServiceRequestMessage extends ServiceMessage {
+import java.io.IOException;
+
+public class ServiceRequestMessageOut extends ServiceMessageOut {
 
     private CharSequence serviceName;
     private CharSequence methodName;
 
+    public CharSequence getServiceName() {
+        return serviceName;
+    }
+
+    public CharSequence getMethodName() {
+        return methodName;
+    }
+
     /**
      * args
      */
-    private byte[] args;
+    private Object[] args;
 
     public static Builder builder() {
         return new Builder();
@@ -24,40 +33,18 @@ public class ServiceRequestMessage extends ServiceMessage {
     }
 
     @Override
-    public void encode(ByteBuf out) {
+    public void encode(ByteBuf out) throws IOException {
         out.writeInt(this.getMessageType());
         out.writeLong(this.getTransactionId());
 
         writeString(this.serviceName, out);
         writeString(this.methodName, out);
 
-        writeBytes(this.args, out);
-    }
-
-    @Override
-    public ServiceMessage decode(ByteBuf in) {
-        this.transactionId = in.readLong();
-        this.serviceName = readString(in);
-        this.methodName = readString(in);
-        this.args = readBytes(in);
-
-        return this;
-    }
-
-    public CharSequence getServiceName() {
-        return serviceName;
-    }
-
-    public CharSequence getMethodName() {
-        return methodName;
-    }
-
-    public byte[] getArgs() {
-        return args;
+        writeBytes(new ObjectMapper().writeValueAsBytes(this.args), out);
     }
 
     public static class Builder {
-        private final ServiceRequestMessage request = new ServiceRequestMessage();
+        private final ServiceRequestMessageOut request = new ServiceRequestMessageOut();
 
         public Builder serviceName(String serviceName) {
             request.serviceName = serviceName;
@@ -74,13 +61,12 @@ public class ServiceRequestMessage extends ServiceMessage {
             return this;
         }
 
-        @SneakyThrows
         public Builder args(Object[] args) {
-            request.args = new ObjectMapper().writeValueAsBytes(args);
+            request.args = args;
             return this;
         }
 
-        public ServiceRequestMessage build() {
+        public ServiceRequestMessageOut build() {
             return request;
         }
     }

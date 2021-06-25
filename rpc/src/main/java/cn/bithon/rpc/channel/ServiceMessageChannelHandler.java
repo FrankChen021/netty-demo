@@ -6,8 +6,8 @@ import cn.bithon.rpc.invocation.IServiceInvocationExecutor;
 import cn.bithon.rpc.invocation.ServiceInvocationRunnable;
 import cn.bithon.rpc.message.ServiceMessage;
 import cn.bithon.rpc.message.ServiceMessageType;
-import cn.bithon.rpc.message.ServiceRequestMessage;
-import cn.bithon.rpc.message.ServiceResponseMessage;
+import cn.bithon.rpc.message.ServiceRequestMessageIn;
+import cn.bithon.rpc.message.ServiceResponseMessageIn;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -40,7 +40,7 @@ public class ServiceMessageChannelHandler extends ChannelInboundHandlerAdapter {
 
         ServiceMessage message = (ServiceMessage) msg;
         if (message.getMessageType() == ServiceMessageType.CLIENT_REQUEST) {
-            ServiceRequestMessage request = (ServiceRequestMessage) message;
+            ServiceRequestMessageIn request = (ServiceRequestMessageIn) message;
             if (channelDebugEnabled) {
                 log.info("receiving request, txId={}, service={}#{}",
                          request.getTransactionId(),
@@ -51,13 +51,13 @@ public class ServiceMessageChannelHandler extends ChannelInboundHandlerAdapter {
             invoker.invoke(new ServiceInvocationRunnable(om,
                                                          serviceRegistry,
                                                          ctx.channel(),
-                                                         (ServiceRequestMessage) message));
+                                                         (ServiceRequestMessageIn) message));
         } else if (message.getMessageType() == ServiceMessageType.SERVER_RESPONSE) {
             if (channelDebugEnabled) {
                 log.info("receiving response, txId={}", message.getTransactionId());
             }
 
-            ClientInvocationManager.getInstance().onResponse((ServiceResponseMessage) message);
+            ClientInvocationManager.getInstance().onResponse((ServiceResponseMessageIn) message);
         }
     }
 

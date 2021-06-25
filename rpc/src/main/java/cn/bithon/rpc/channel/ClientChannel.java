@@ -7,8 +7,8 @@ import cn.bithon.rpc.endpoint.IEndPointProvider;
 import cn.bithon.rpc.endpoint.SingleEndPointProvider;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.invocation.ServiceStubFactory;
-import cn.bithon.rpc.message.ServiceMessageDecoder;
-import cn.bithon.rpc.message.ServiceMessageEncoder;
+import cn.bithon.rpc.message.ServiceMessageInDecoder;
+import cn.bithon.rpc.message.ServiceMessageOutEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -68,8 +68,8 @@ public class ClientChannel implements IChannelWriter, Closeable {
                          pipeline.addLast("frameDecoder",
                                           new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
                          pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
-                         pipeline.addLast("decoder", new ServiceMessageDecoder());
-                         pipeline.addLast("encoder", new ServiceMessageEncoder());
+                         pipeline.addLast("decoder", new ServiceMessageInDecoder());
+                         pipeline.addLast("encoder", new ServiceMessageOutEncoder());
                          pipeline.addLast(new ClientChannelManager());
                          pipeline.addLast(new ServiceMessageChannelHandler(serviceRegistry));
                      }

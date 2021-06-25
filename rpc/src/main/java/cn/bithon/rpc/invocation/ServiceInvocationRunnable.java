@@ -3,8 +3,8 @@ package cn.bithon.rpc.invocation;
 import cn.bithon.rpc.ServiceRegistry;
 import cn.bithon.rpc.exception.BadRequestException;
 import cn.bithon.rpc.exception.ServiceInvocationException;
-import cn.bithon.rpc.message.ServiceRequestMessage;
-import cn.bithon.rpc.message.ServiceResponseMessage;
+import cn.bithon.rpc.message.ServiceRequestMessageIn;
+import cn.bithon.rpc.message.ServiceResponseMessageOut;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -17,12 +17,12 @@ public class ServiceInvocationRunnable implements Runnable {
     private final ObjectMapper om;
     private final ServiceRegistry serviceRegistry;
     private final Channel channel;
-    private final ServiceRequestMessage serviceRequest;
+    private final ServiceRequestMessageIn serviceRequest;
 
     public ServiceInvocationRunnable(ObjectMapper om,
                                      ServiceRegistry serviceRegistry,
                                      Channel channel,
-                                     ServiceRequestMessage serviceRequest) {
+                                     ServiceRequestMessageIn serviceRequest) {
         this.om = om;
         this.serviceRegistry = serviceRegistry;
         this.channel = channel;
@@ -33,7 +33,7 @@ public class ServiceInvocationRunnable implements Runnable {
         return channel;
     }
 
-    public ServiceRequestMessage getServiceRequest() {
+    public ServiceRequestMessageIn getServiceRequest() {
         return serviceRequest;
     }
 
@@ -78,22 +78,22 @@ public class ServiceInvocationRunnable implements Runnable {
             }
 
             if (!serviceProvider.isOneway()) {
-                sendResponse(ServiceResponseMessage.builder()
-                                                   .serverResponseAt(System.currentTimeMillis())
-                                                   .transactionId(serviceRequest.getTransactionId())
-                                                   .returning(ret)
-                                                   .build());
+                sendResponse(ServiceResponseMessageOut.builder()
+                                                      .serverResponseAt(System.currentTimeMillis())
+                                                      .transactionId(serviceRequest.getTransactionId())
+                                                      .returning(ret)
+                                                      .build());
             }
         } catch (ServiceInvocationException e) {
-            sendResponse(ServiceResponseMessage.builder()
-                                               .serverResponseAt(System.currentTimeMillis())
-                                               .transactionId(serviceRequest.getTransactionId())
-                                               .exception(e.getMessage())
-                                               .build());
+            sendResponse(ServiceResponseMessageOut.builder()
+                                                  .serverResponseAt(System.currentTimeMillis())
+                                                  .transactionId(serviceRequest.getTransactionId())
+                                                  .exception(e.getMessage())
+                                                  .build());
         }
     }
 
-    private void sendResponse(ServiceResponseMessage serviceResponse) {
+    private void sendResponse(ServiceResponseMessageOut serviceResponse) {
         channel.writeAndFlush(serviceResponse);
     }
 
