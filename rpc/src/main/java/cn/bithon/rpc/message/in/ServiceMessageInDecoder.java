@@ -1,5 +1,6 @@
-package cn.bithon.rpc.message;
+package cn.bithon.rpc.message.in;
 
+import cn.bithon.rpc.message.ServiceMessageType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;

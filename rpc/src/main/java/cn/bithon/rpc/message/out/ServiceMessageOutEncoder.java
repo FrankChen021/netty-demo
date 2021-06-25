@@ -1,4 +1,4 @@
-package cn.bithon.rpc.message;
+package cn.bithon.rpc.message.out;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

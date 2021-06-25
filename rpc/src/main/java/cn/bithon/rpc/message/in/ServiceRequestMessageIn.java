@@ -1,7 +1,9 @@
-package cn.bithon.rpc.message;
+package cn.bithon.rpc.message.in;
 
 import cn.bithon.rpc.ServiceRegistry;
 import cn.bithon.rpc.exception.BadRequestException;
+import cn.bithon.rpc.message.ServiceMessage;
+import cn.bithon.rpc.message.ServiceMessageType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;

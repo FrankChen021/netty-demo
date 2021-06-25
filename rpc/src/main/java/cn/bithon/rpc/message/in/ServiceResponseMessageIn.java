@@ -1,5 +1,7 @@
-package cn.bithon.rpc.message;
+package cn.bithon.rpc.message.in;
 
+import cn.bithon.rpc.message.ServiceMessage;
+import cn.bithon.rpc.message.ServiceMessageType;
 import io.netty.buffer.ByteBuf;
 
 public class ServiceResponseMessageIn extends ServiceMessageIn {

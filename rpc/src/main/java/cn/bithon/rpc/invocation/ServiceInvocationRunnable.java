@@ -3,8 +3,8 @@ package cn.bithon.rpc.invocation;
 import cn.bithon.rpc.ServiceRegistry;
 import cn.bithon.rpc.exception.BadRequestException;
 import cn.bithon.rpc.exception.ServiceInvocationException;
-import cn.bithon.rpc.message.ServiceRequestMessageIn;
-import cn.bithon.rpc.message.ServiceResponseMessageOut;
+import cn.bithon.rpc.message.in.ServiceRequestMessageIn;
+import cn.bithon.rpc.message.out.ServiceResponseMessageOut;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.Channel;
 

@@ -1,5 +1,6 @@
-package cn.bithon.rpc.message;
+package cn.bithon.rpc.message.out;
 
+import cn.bithon.rpc.message.ServiceMessageType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 

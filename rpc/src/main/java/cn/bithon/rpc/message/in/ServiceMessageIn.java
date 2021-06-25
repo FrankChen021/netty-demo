@@ -1,5 +1,6 @@
-package cn.bithon.rpc.message;
+package cn.bithon.rpc.message.in;
 
+import cn.bithon.rpc.message.ServiceMessage;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.charset.StandardCharsets;
