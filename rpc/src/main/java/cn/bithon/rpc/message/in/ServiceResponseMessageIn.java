@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 
 public class ServiceResponseMessageIn extends ServiceMessageIn {
     private long serverResponseAt;
@@ -31,9 +32,10 @@ public class ServiceResponseMessageIn extends ServiceMessageIn {
         return serverResponseAt;
     }
 
-    public Object getReturning(Class<?> clazz) throws IOException {
+    public Object getReturning(Type type) throws IOException {
         if (returning != null) {
-            return new ObjectMapper().readValue(this.returning, clazz);
+            ObjectMapper om = new ObjectMapper();
+            return om.readValue(this.returning, om.getTypeFactory().constructType(type));
         }
         return null;
     }

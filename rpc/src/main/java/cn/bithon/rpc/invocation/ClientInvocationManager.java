@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -79,7 +80,7 @@ public class ClientInvocationManager {
             inflightRequest.requestAt = System.currentTimeMillis();
             inflightRequest.methodName = serviceRequest.getMethodName();
             inflightRequest.serviceName = serviceRequest.getServiceName();
-            inflightRequest.returnObjType = method.getReturnType();
+            inflightRequest.returnObjType = method.getGenericReturnType();
             this.inflightRequests.put(serviceRequest.getTransactionId(), inflightRequest);
         }
         if (debug) {
@@ -142,7 +143,7 @@ public class ClientInvocationManager {
     static class InflightRequest {
         long requestAt;
         long responseAt;
-        Class<?> returnObjType;
+        Type returnObjType;
         Object response;
         /**
          * indicate whether this request has response.

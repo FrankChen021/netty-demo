@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,19 +29,19 @@ public class ServiceRegistry {
     }
 
     public static class ParameterType {
-        private final Class<?> rawType;
-        private final Class<?> messageType;
+        private final Type rawType;
+        private final Type messageType;
 
-        public ParameterType(Class<?> rawType, Class<?> messageType) {
+        public ParameterType(Type rawType, Type messageType) {
             this.rawType = rawType;
             this.messageType = messageType;
         }
 
-        public Class<?> getRawType() {
+        public Type getRawType() {
             return rawType;
         }
 
-        public Class<?> getMessageType() {
+        public Type getMessageType() {
             return messageType;
         }
     }
@@ -57,7 +58,7 @@ public class ServiceRegistry {
             this.isOneway = method.getAnnotation(Oneway.class) != null;
             this.parameterTypes = new ParameterType[method.getParameterCount()];
 
-            Class<?>[] parameterRawTypes = method.getParameterTypes();
+            Type[] parameterRawTypes = method.getGenericParameterTypes();
             for (int i = 0; i < parameterRawTypes.length; i++) {
                 parameterTypes[i] = new ParameterType(parameterRawTypes[i],
                                                       parameterRawTypes[i]);

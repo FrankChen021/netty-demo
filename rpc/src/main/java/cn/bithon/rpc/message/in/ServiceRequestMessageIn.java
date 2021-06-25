@@ -92,7 +92,7 @@ public class ServiceRequestMessageIn extends ServiceMessageIn {
             JsonNode inputArgNode = argsArrayNode.get(i);
             if (inputArgNode != null && !inputArgNode.isNull()) {
                 try {
-                    inputArgs[i] = om.convertValue(inputArgNode, parameterTypes[i].getMessageType());
+                    inputArgs[i] = om.convertValue(inputArgNode, om.getTypeFactory().constructType(parameterTypes[i].getMessageType()));
                 } catch (IllegalArgumentException e) {
                     throw new BadRequestException("Bad args for %s#%s at %d: %s",
                                                   serviceName,
