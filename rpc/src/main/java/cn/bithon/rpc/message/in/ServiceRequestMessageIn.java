@@ -52,6 +52,12 @@ public class ServiceRequestMessageIn extends ServiceMessageIn {
     public Object[] getArgs(ServiceRegistry.ParameterType[] parameterTypes)
         throws BadRequestException {
 
+        if (this.argLength != parameterTypes.length) {
+            throw new BadRequestException(String.format("Argument size not match. Expected %d, but given %d",
+                                                        parameterTypes.length,
+                                                        this.argLength));
+        }
+
         Object[] inputArgs = new Object[parameterTypes.length];
         if (parameterTypes.length <= 0) {
             return inputArgs;

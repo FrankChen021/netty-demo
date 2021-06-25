@@ -4,8 +4,8 @@ import cn.bithon.rpc.Oneway;
 import cn.bithon.rpc.channel.IChannelWriter;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.exception.TimeoutException;
-import cn.bithon.rpc.message.out.ServiceRequestMessageOut;
 import cn.bithon.rpc.message.in.ServiceResponseMessageIn;
+import cn.bithon.rpc.message.out.ServiceRequestMessageOut;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.netty.channel.Channel;
@@ -65,7 +65,8 @@ public class ClientInvocationManager {
 
         // TODO: cache method.toString()
         ServiceRequestMessageOut serviceRequest = ServiceRequestMessageOut.builder()
-                                                                          .serviceName(method.getDeclaringClass().getSimpleName())
+                                                                          .serviceName(method.getDeclaringClass()
+                                                                                             .getSimpleName())
                                                                           .methodName(method.toString())
                                                                           .transactionId(transactionId.incrementAndGet())
                                                                           .args(args)
@@ -122,12 +123,10 @@ public class ClientInvocationManager {
             return;
         }
 
-        if (response.getReturning() != null) {
-            try {
-                inflightRequest.response = om.readValue(response.getReturning(), inflightRequest.returnObjType);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            inflightRequest.response = response.getReturning(inflightRequest.returnObjType);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         inflightRequest.exception = response.getException();

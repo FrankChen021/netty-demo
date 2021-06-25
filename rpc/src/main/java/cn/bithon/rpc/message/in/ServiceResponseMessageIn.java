@@ -2,7 +2,10 @@ package cn.bithon.rpc.message.in;
 
 import cn.bithon.rpc.message.ServiceMessage;
 import cn.bithon.rpc.message.ServiceMessageType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
+
+import java.io.IOException;
 
 public class ServiceResponseMessageIn extends ServiceMessageIn {
     private long serverResponseAt;
@@ -28,24 +31,14 @@ public class ServiceResponseMessageIn extends ServiceMessageIn {
         return serverResponseAt;
     }
 
-    public void setServerResponseAt(long serverResponseAt) {
-        this.serverResponseAt = serverResponseAt;
-    }
-
-    public byte[] getReturning() {
-        return returning;
-    }
-
-    public void setReturning(byte[] returning) {
-        this.returning = returning;
+    public Object getReturning(Class<?> clazz) throws IOException {
+        if (returning != null) {
+            return new ObjectMapper().readValue(this.returning, clazz);
+        }
+        return null;
     }
 
     public CharSequence getException() {
         return exception;
     }
-
-    public void setException(CharSequence exception) {
-        this.exception = exception;
-    }
-
 }

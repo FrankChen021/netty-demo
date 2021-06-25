@@ -1,13 +1,16 @@
 package cn.bithon.rpc.message.out;
 
 import cn.bithon.rpc.message.ServiceMessageType;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import lombok.SneakyThrows;
 
+import java.io.IOException;
+
 public class ServiceResponseMessageOut extends ServiceMessageOut {
     private long serverResponseAt;
-    private byte[] returning;
+    private Object returning;
     private CharSequence exception;
 
     public static Builder builder() {
@@ -20,33 +23,13 @@ public class ServiceResponseMessageOut extends ServiceMessageOut {
     }
 
     @Override
-    public void encode(ByteBuf out) {
+    public void encode(ByteBuf out) throws IOException {
         out.writeInt(this.getMessageType());
         out.writeLong(this.getTransactionId());
 
         out.writeLong(serverResponseAt);
-        writeBytes(this.returning, out);
+        writeBytes(this.returning == null ? null : new ObjectMapper().writeValueAsBytes(this.returning), out);
         writeString(this.exception, out);
-    }
-
-    public long getServerResponseAt() {
-        return serverResponseAt;
-    }
-
-    public void setServerResponseAt(long serverResponseAt) {
-        this.serverResponseAt = serverResponseAt;
-    }
-
-    public byte[] getReturning() {
-        return returning;
-    }
-
-    public void setReturning(byte[] returning) {
-        this.returning = returning;
-    }
-
-    public CharSequence getException() {
-        return exception;
     }
 
     public void setException(CharSequence exception) {
@@ -77,7 +60,7 @@ public class ServiceResponseMessageOut extends ServiceMessageOut {
 
         @SneakyThrows
         public Builder returning(Object ret) {
-            response.returning = new ObjectMapper().writeValueAsBytes(ret);
+            response.returning = ret;
             return this;
         }
     }
