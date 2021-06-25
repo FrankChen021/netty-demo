@@ -40,6 +40,7 @@ public class ServiceRequestMessageOut extends ServiceMessageOut {
         writeString(this.serviceName, out);
         writeString(this.methodName, out);
 
+        out.writeInt(this.args.length);
         writeBytes(new ObjectMapper().writeValueAsBytes(this.args), out);
     }
 
