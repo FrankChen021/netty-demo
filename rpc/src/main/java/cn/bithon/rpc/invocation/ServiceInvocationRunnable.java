@@ -58,6 +58,10 @@ public class ServiceInvocationRunnable implements Runnable {
             Object ret;
             try {
                 ret = serviceProvider.invoke(inputArgs);
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("Bad Request: Service[%s#%s] exception: Illegal argument",
+                                              serviceRequest.getServiceName(),
+                                              serviceRequest.getMethodName());
             } catch (IllegalAccessException e) {
                 throw new ServiceInvocationException("Service[%s#%s] exception: %s",
                                                      serviceRequest.getServiceName(),
@@ -73,14 +77,14 @@ public class ServiceInvocationRunnable implements Runnable {
             if (!serviceProvider.isOneway()) {
                 sendResponse(ServiceResponseMessageOut.builder()
                                                       .serverResponseAt(System.currentTimeMillis())
-                                                      .transactionId(serviceRequest.getTransactionId())
+                                                      .txId(serviceRequest.getTransactionId())
                                                       .returning(ret)
                                                       .build());
             }
         } catch (ServiceInvocationException e) {
             sendResponse(ServiceResponseMessageOut.builder()
                                                   .serverResponseAt(System.currentTimeMillis())
-                                                  .transactionId(serviceRequest.getTransactionId())
+                                                  .txId(serviceRequest.getTransactionId())
                                                   .exception(e.getMessage())
                                                   .build());
         }

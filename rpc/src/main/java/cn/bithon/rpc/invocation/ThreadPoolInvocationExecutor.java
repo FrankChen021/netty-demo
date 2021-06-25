@@ -36,8 +36,8 @@ public class ThreadPoolInvocationExecutor implements IServiceInvocationExecutor 
             invoker.getChannel()
                    .writeAndFlush(ServiceResponseMessageOut.builder()
                                                            .serverResponseAt(System.currentTimeMillis())
-                                                           .transactionId(invoker.getServiceRequest()
-                                                                                 .getTransactionId())
+                                                           .txId(invoker.getServiceRequest()
+                                                                        .getTransactionId())
                                                            .exception(
                                                                "Server has no enough resources to process the request.")
                                                            .build());

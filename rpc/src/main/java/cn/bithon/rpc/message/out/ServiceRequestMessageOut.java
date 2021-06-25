@@ -1,10 +1,15 @@
 package cn.bithon.rpc.message.out;
 
 import cn.bithon.rpc.message.ServiceMessageType;
+import cn.bithon.rpc.message.serializer.BinarySerializer;
+import cn.bithon.rpc.message.serializer.ISerializer;
+import cn.bithon.rpc.message.serializer.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 public class ServiceRequestMessageOut extends ServiceMessageOut {
 
@@ -14,7 +19,6 @@ public class ServiceRequestMessageOut extends ServiceMessageOut {
     public CharSequence getServiceName() {
         return serviceName;
     }
-
     public CharSequence getMethodName() {
         return methodName;
     }
@@ -41,8 +45,9 @@ public class ServiceRequestMessageOut extends ServiceMessageOut {
         writeString(this.serviceName, out);
         writeString(this.methodName, out);
 
-        out.writeInt(this.args.length);
-        writeBytes(new ObjectMapper().writeValueAsBytes(this.args), out);
+        ISerializer serializer = BinarySerializer.INSTANCE;
+        out.writeInt(serializer.getType());
+        serializer.serialize(out, this.args);
     }
 
     public static class Builder {

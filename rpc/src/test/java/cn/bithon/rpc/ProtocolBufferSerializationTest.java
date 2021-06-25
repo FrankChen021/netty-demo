@@ -1,6 +1,6 @@
 package cn.bithon.rpc;
 
-import cn.bithon.rpc.message.BinarySerializer;
+import cn.bithon.rpc.message.serializer.ProtocolBufferSerializer;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
 import org.junit.Assert;
@@ -20,11 +20,11 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class SerializationTest {
+public class ProtocolBufferSerializationTest {
 
     @Test
     public void testSerialization() throws IOException {
-        BinarySerializer serializer = new BinarySerializer();
+        ProtocolBufferSerializer serializer = new ProtocolBufferSerializer();
 
         byte[] bytes;
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -71,7 +71,7 @@ public class SerializationTest {
 
     @Test
     public void testPrimitiveSerialization() throws IOException {
-        BinarySerializer serializer = new BinarySerializer();
+        ProtocolBufferSerializer serializer = new ProtocolBufferSerializer();
 
         Integer i = 11;
         Float f = 11.1f;
@@ -108,7 +108,7 @@ public class SerializationTest {
 
     @Test
     public void testSerializationProtoBuffer() throws IOException {
-        BinarySerializer serializer = new BinarySerializer();
+        ProtocolBufferSerializer serializer = new ProtocolBufferSerializer();
 
         byte[] bytes;
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -134,7 +134,7 @@ public class SerializationTest {
 
     @Test
     public void testMapSerialization() throws IOException {
-        BinarySerializer serializer = new BinarySerializer();
+        ProtocolBufferSerializer serializer = new ProtocolBufferSerializer();
 
         RequestMetrics mapObject = new RequestMetrics();
         mapObject.put("/info", WebRequestMetrics.newBuilder()
@@ -163,7 +163,7 @@ public class SerializationTest {
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
             Map<String, WebRequestMetrics> metrics = serializer.deserialize(is,
-                                                                            new BinarySerializer.TypeReference<Map<String, WebRequestMetrics>>() {
+                                                                            new ProtocolBufferSerializer.TypeReference<Map<String, WebRequestMetrics>>() {
                                                                             });
             Assert.assertEquals(mapObject, metrics);
             Assert.assertTrue(is.isAtEnd());
@@ -173,7 +173,7 @@ public class SerializationTest {
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
             Map<String, WebRequestMetrics> metrics = serializer.deserialize(is,
-                                                                            new BinarySerializer.TypeReference<HashMap<String, WebRequestMetrics>>() {
+                                                                            new ProtocolBufferSerializer.TypeReference<HashMap<String, WebRequestMetrics>>() {
                                                                             });
             Assert.assertEquals(mapObject, metrics);
             Assert.assertTrue(is.isAtEnd());
@@ -183,7 +183,7 @@ public class SerializationTest {
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
             Map<String, WebRequestMetrics> metrics = serializer.deserialize(is,
-                                                                            new BinarySerializer.TypeReference<ConcurrentHashMap<String, WebRequestMetrics>>() {
+                                                                            new ProtocolBufferSerializer.TypeReference<ConcurrentHashMap<String, WebRequestMetrics>>() {
                                                                             });
             Assert.assertEquals(mapObject, metrics);
             Assert.assertTrue(is.isAtEnd());
@@ -193,7 +193,7 @@ public class SerializationTest {
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
             Map<String, WebRequestMetrics> metrics = serializer.deserialize(is,
-                                                                            new BinarySerializer.TypeReference<Hashtable<String, WebRequestMetrics>>() {
+                                                                            new ProtocolBufferSerializer.TypeReference<Hashtable<String, WebRequestMetrics>>() {
                                                                             });
             Assert.assertEquals(mapObject, metrics);
             Assert.assertTrue(is.isAtEnd());
@@ -202,7 +202,7 @@ public class SerializationTest {
 
     @Test
     public void testCollectionSerialization() throws IOException {
-        BinarySerializer serializer = new BinarySerializer();
+        ProtocolBufferSerializer serializer = new ProtocolBufferSerializer();
 
         List<WebRequestMetrics> metrics1 = new ArrayList<>();
         metrics1.add(WebRequestMetrics.newBuilder()
@@ -232,7 +232,7 @@ public class SerializationTest {
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
             List<WebRequestMetrics> metrics2 = serializer.deserialize(is,
-                                                                      new BinarySerializer.TypeReference<List<WebRequestMetrics>>() {
+                                                                      new ProtocolBufferSerializer.TypeReference<List<WebRequestMetrics>>() {
                                                                       });
             Assert.assertEquals(metrics1, metrics2);
             Assert.assertTrue(is.isAtEnd());
@@ -242,7 +242,7 @@ public class SerializationTest {
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
             List<WebRequestMetrics> metrics2 = serializer.deserialize(is,
-                                                                      new BinarySerializer.TypeReference<ArrayList<WebRequestMetrics>>() {
+                                                                      new ProtocolBufferSerializer.TypeReference<ArrayList<WebRequestMetrics>>() {
                                                                       });
             Assert.assertEquals(metrics1, metrics2);
             Assert.assertTrue(is.isAtEnd());
@@ -252,7 +252,7 @@ public class SerializationTest {
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
             Set<WebRequestMetrics> metrics2 = serializer.deserialize(is,
-                                                                     new BinarySerializer.TypeReference<Set<WebRequestMetrics>>() {
+                                                                     new ProtocolBufferSerializer.TypeReference<Set<WebRequestMetrics>>() {
                                                                      });
             Assert.assertEquals(new HashSet<>(metrics1), metrics2);
             Assert.assertTrue(is.isAtEnd());
@@ -262,7 +262,7 @@ public class SerializationTest {
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
             LinkedList<WebRequestMetrics> metrics2 = serializer.deserialize(is,
-                                                                            new BinarySerializer.TypeReference<LinkedList<WebRequestMetrics>>() {
+                                                                            new ProtocolBufferSerializer.TypeReference<LinkedList<WebRequestMetrics>>() {
                                                                             });
             Assert.assertEquals(metrics1, metrics2);
             Assert.assertTrue(is.isAtEnd());
@@ -272,7 +272,7 @@ public class SerializationTest {
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
             Queue<WebRequestMetrics> metrics2 = serializer.deserialize(is,
-                                                                       new BinarySerializer.TypeReference<Queue<WebRequestMetrics>>() {
+                                                                       new ProtocolBufferSerializer.TypeReference<Queue<WebRequestMetrics>>() {
                                                                        });
             Assert.assertEquals(new LinkedList<>(metrics1), metrics2);
             Assert.assertTrue(is.isAtEnd());
@@ -290,7 +290,7 @@ public class SerializationTest {
 
     @Test
     public void testObjectArraySerialization() throws IOException {
-        BinarySerializer serializer = new BinarySerializer();
+        ProtocolBufferSerializer serializer = new ProtocolBufferSerializer();
 
         WebRequestMetrics[] metrics1 = new WebRequestMetrics[]{
             WebRequestMetrics.newBuilder()
@@ -321,7 +321,7 @@ public class SerializationTest {
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
             Queue<WebRequestMetrics> metrics2 = serializer.deserialize(is,
-                                                                       new BinarySerializer.TypeReference<Queue<WebRequestMetrics>>() {
+                                                                       new ProtocolBufferSerializer.TypeReference<Queue<WebRequestMetrics>>() {
                                                                        });
             Assert.assertEquals(Arrays.asList(metrics1), metrics2);
             Assert.assertTrue(is.isAtEnd());
@@ -330,7 +330,7 @@ public class SerializationTest {
 
     @Test
     public void testPrimitiveArraySerialization() throws IOException {
-        BinarySerializer serializer = new BinarySerializer();
+        ProtocolBufferSerializer serializer = new ProtocolBufferSerializer();
 
         byte[] bytes;
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -360,7 +360,7 @@ public class SerializationTest {
 
     @Test
     public void testEmptyArraySerialization() throws IOException {
-        BinarySerializer serializer = new BinarySerializer();
+        ProtocolBufferSerializer serializer = new ProtocolBufferSerializer();
 
         WebRequestMetrics[] metrics1 = new WebRequestMetrics[]{
         };
@@ -385,7 +385,7 @@ public class SerializationTest {
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
             Queue<WebRequestMetrics> metrics2 = serializer.deserialize(is,
-                                                                       new BinarySerializer.TypeReference<Queue<WebRequestMetrics>>() {
+                                                                       new ProtocolBufferSerializer.TypeReference<Queue<WebRequestMetrics>>() {
                                                                        });
             Assert.assertEquals(Arrays.asList(metrics1), metrics2);
             Assert.assertTrue(is.isAtEnd());
@@ -394,7 +394,7 @@ public class SerializationTest {
 
     @Test
     public void testStringSerialization() throws IOException {
-        BinarySerializer serializer = new BinarySerializer();
+        ProtocolBufferSerializer serializer = new ProtocolBufferSerializer();
 
         byte[] bytes;
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {

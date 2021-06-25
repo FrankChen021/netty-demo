@@ -1,15 +1,14 @@
 package cn.bithon.rpc.message.in;
 
-import cn.bithon.rpc.ServiceRegistry;
 import cn.bithon.rpc.exception.BadRequestException;
 import cn.bithon.rpc.message.ServiceMessage;
 import cn.bithon.rpc.message.ServiceMessageType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import cn.bithon.rpc.message.serializer.ISerializer;
+import cn.bithon.rpc.message.serializer.SerializerFactory;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 
 public class ServiceRequestMessageIn extends ServiceMessageIn {
 
@@ -19,8 +18,9 @@ public class ServiceRequestMessageIn extends ServiceMessageIn {
     /**
      * args
      */
-    private byte[] args;
+    private ByteBuf args;
     private int argLength;
+    private int serializerType;
 
     @Override
     public int getMessageType() {
@@ -32,8 +32,8 @@ public class ServiceRequestMessageIn extends ServiceMessageIn {
         this.transactionId = in.readLong();
         this.serviceName = readString(in);
         this.methodName = readString(in);
-        this.argLength = in.readInt();
-        this.args = readBytes(in);
+        this.serializerType = in.readInt();
+        this.args = in;
         return this;
     }
 
@@ -49,59 +49,22 @@ public class ServiceRequestMessageIn extends ServiceMessageIn {
     //   return args;
     //}
 
-    public Object[] getArgs(ServiceRegistry.ParameterType[] parameterTypes)
-        throws BadRequestException {
+    public Object[] getArgs(Type[] parameterTypes) throws BadRequestException {
 
-        if (this.argLength != parameterTypes.length) {
-            throw new BadRequestException(String.format("Argument size not match. Expected %d, but given %d",
-                                                        parameterTypes.length,
-                                                        this.argLength));
-        }
+//        if (this.argLength != parameterTypes.length) {
+//            throw new BadRequestException(String.format("Argument size not match. Expected %d, but given %d",
+//                                                        parameterTypes.length,
+//                                                        this.argLength));
+//        }
 
-        Object[] inputArgs = new Object[parameterTypes.length];
-        if (parameterTypes.length <= 0) {
-            return inputArgs;
-        }
-
-        ObjectMapper om = new ObjectMapper();
-        JsonNode argsNode;
         try {
-            argsNode = om.readTree(this.args);
+            ISerializer serializer = SerializerFactory.getSerializer(this.serializerType);
+            return serializer.deserialize(this.args, parameterTypes);
         } catch (IOException e) {
-            throw new BadRequestException("Can't deserialize args");
+            throw new BadRequestException("Bad args for %s#%s: %s",
+                                          serviceName,
+                                          methodName,
+                                          e.getMessage());
         }
-        if (argsNode == null || argsNode.isNull()) {
-            throw new BadRequestException("args is null");
-        }
-
-        if (!argsNode.isArray()) {
-            throw new BadRequestException("Bad args type");
-        }
-
-        ArrayNode argsArrayNode = (ArrayNode) argsNode;
-        if (argsArrayNode.size() != parameterTypes.length) {
-            throw new BadRequestException(
-                "Bad args for %s#%s, expected %d parameters, but provided %d parameters",
-                serviceName,
-                methodName,
-                parameterTypes.length,
-                argsArrayNode.size());
-        }
-
-        for (int i = 0; i < parameterTypes.length; i++) {
-            JsonNode inputArgNode = argsArrayNode.get(i);
-            if (inputArgNode != null && !inputArgNode.isNull()) {
-                try {
-                    inputArgs[i] = om.convertValue(inputArgNode, om.getTypeFactory().constructType(parameterTypes[i].getMessageType()));
-                } catch (IllegalArgumentException e) {
-                    throw new BadRequestException("Bad args for %s#%s at %d: %s",
-                                                  serviceName,
-                                                  methodName,
-                                                  i,
-                                                  e.getMessage());
-                }
-            }
-        }
-        return inputArgs;
     }
 }

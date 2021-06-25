@@ -1,4 +1,4 @@
-package cn.bithon.rpc.message;
+package cn.bithon.rpc.message.serializer;
 
 
 import com.google.protobuf.CodedInputStream;
@@ -38,10 +38,10 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class BinarySerializer {
+public class ProtocolBufferSerializer {
 
     public void serialize(MessageLite obj, CodedOutputStream os) throws IOException {
-        ProtocolBufferSerializer.INSTANCE.serialize(obj, os);
+        ProtocolBufferMessageSerializer.INSTANCE.serialize(obj, os);
     }
 
     public void serialize(Collection<?> obj, CodedOutputStream os) throws IOException {
@@ -83,7 +83,7 @@ public class BinarySerializer {
     }
 
     public abstract static class TypeReference<T> implements Comparable<TypeReference<T>> {
-        protected final Type _type;
+        protected final Type type;
 
         protected TypeReference() {
             Type superClass = this.getClass().getGenericSuperclass();
@@ -91,7 +91,7 @@ public class BinarySerializer {
                 throw new IllegalArgumentException(
                     "Internal error: TypeReference constructed without actual type information");
             } else {
-                this._type = ((ParameterizedType) superClass).getActualTypeArguments()[0];
+                this.type = ((ParameterizedType) superClass).getActualTypeArguments()[0];
             }
         }
 
@@ -106,10 +106,10 @@ public class BinarySerializer {
                 if (upperBounds.length == 1) {
                     return getRawClass(upperBounds[0]);
                 } else {
-                    throw new IllegalStateException("TODO");
+                    throw new IllegalStateException("Not Supported");
                 }
             } else {
-                throw new IllegalStateException("TODO");
+                throw new IllegalStateException("Not Supported");
             }
         }
 
@@ -141,7 +141,7 @@ public class BinarySerializer {
         }
 
         public Type getType() {
-            return this._type;
+            return this.type;
         }
 
         @Override
@@ -206,7 +206,7 @@ public class BinarySerializer {
             } else if (obj.getClass().isArray()) {
                 ArraySerializer.INSTANCE.serialize(obj, os);
             } else if (obj instanceof MessageLite) {
-                ProtocolBufferSerializer.INSTANCE.serialize(obj, os);
+                ProtocolBufferMessageSerializer.INSTANCE.serialize(obj, os);
             } else {
                 // unknown
                 throw new IllegalStateException("unsupported type " + obj.getClass().getName());
@@ -231,7 +231,7 @@ public class BinarySerializer {
                 return MapSerializer.INSTANCE.deserialize(type, is);
             }
             if (MessageLite.class.isAssignableFrom(clazz)) {
-                return ProtocolBufferSerializer.INSTANCE.deserialize(type, is);
+                return ProtocolBufferMessageSerializer.INSTANCE.deserialize(type, is);
             }
 
             throw new IllegalStateException("Unknown class to deserialize");
@@ -530,9 +530,9 @@ public class BinarySerializer {
         }
     }
 
-    private static class ProtocolBufferSerializer implements IObjectSerializer {
+    private static class ProtocolBufferMessageSerializer implements IObjectSerializer {
 
-        public static final ProtocolBufferSerializer INSTANCE = new ProtocolBufferSerializer();
+        public static final ProtocolBufferMessageSerializer INSTANCE = new ProtocolBufferMessageSerializer();
 
         @Override
         public void serialize(Object obj, CodedOutputStream os) throws IOException {

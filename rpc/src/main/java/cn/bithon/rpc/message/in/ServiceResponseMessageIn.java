@@ -2,7 +2,7 @@ package cn.bithon.rpc.message.in;
 
 import cn.bithon.rpc.message.ServiceMessage;
 import cn.bithon.rpc.message.ServiceMessageType;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cn.bithon.rpc.message.serializer.SerializerFactory;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
@@ -10,7 +10,7 @@ import java.lang.reflect.Type;
 
 public class ServiceResponseMessageIn extends ServiceMessageIn {
     private long serverResponseAt;
-    private byte[] returning;
+    private ByteBuf returning;
     private CharSequence exception;
 
     @Override
@@ -23,8 +23,12 @@ public class ServiceResponseMessageIn extends ServiceMessageIn {
         this.transactionId = in.readLong();
 
         this.serverResponseAt = in.readLong();
-        this.returning = readBytes(in);
         this.exception = readString(in);
+
+        boolean hasReturning = in.readByte() == 1;
+        if (hasReturning) {
+            this.returning = in;
+        }
         return this;
     }
 
@@ -34,8 +38,9 @@ public class ServiceResponseMessageIn extends ServiceMessageIn {
 
     public Object getReturning(Type type) throws IOException {
         if (returning != null) {
-            ObjectMapper om = new ObjectMapper();
-            return om.readValue(this.returning, om.getTypeFactory().constructType(type));
+            int serializer = this.returning.readInt();
+            return SerializerFactory.getSerializer(serializer)
+                                    .deserialize(this.returning, type);
         }
         return null;
     }

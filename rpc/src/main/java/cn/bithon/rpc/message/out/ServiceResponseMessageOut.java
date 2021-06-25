@@ -1,10 +1,10 @@
 package cn.bithon.rpc.message.out;
 
 import cn.bithon.rpc.message.ServiceMessageType;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cn.bithon.rpc.message.serializer.BinarySerializer;
+import cn.bithon.rpc.message.serializer.ISerializer;
 import io.netty.buffer.ByteBuf;
-import lombok.SneakyThrows;
+import io.netty.buffer.ByteBufOutputStream;
 
 import java.io.IOException;
 
@@ -28,8 +28,17 @@ public class ServiceResponseMessageOut extends ServiceMessageOut {
         out.writeLong(this.getTransactionId());
 
         out.writeLong(serverResponseAt);
-        writeBytes(this.returning == null ? null : new ObjectMapper().writeValueAsBytes(this.returning), out);
         writeString(this.exception, out);
+
+        if (this.returning == null) {
+            out.writeByte(0);
+        } else {
+            out.writeByte(1);
+
+            ISerializer serializer = BinarySerializer.INSTANCE;
+            out.writeInt(serializer.getType());
+            serializer.serialize(out, this.returning);
+        }
     }
 
     public void setException(CharSequence exception) {
@@ -44,7 +53,7 @@ public class ServiceResponseMessageOut extends ServiceMessageOut {
             return this;
         }
 
-        public Builder transactionId(long txId) {
+        public Builder txId(long txId) {
             response.transactionId = txId;
             return this;
         }
@@ -58,7 +67,6 @@ public class ServiceResponseMessageOut extends ServiceMessageOut {
             return response;
         }
 
-        @SneakyThrows
         public Builder returning(Object ret) {
             response.returning = ret;
             return this;

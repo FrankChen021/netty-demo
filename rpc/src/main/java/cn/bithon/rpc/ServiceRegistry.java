@@ -50,19 +50,13 @@ public class ServiceRegistry {
         private final Method method;
         private final Object serviceImpl;
         private final boolean isOneway;
-        private final ParameterType[] parameterTypes;
+        private final Type[] parameterTypes;
 
         public RegistryItem(Method method, Object serviceImpl) {
             this.method = method;
             this.serviceImpl = serviceImpl;
             this.isOneway = method.getAnnotation(Oneway.class) != null;
-            this.parameterTypes = new ParameterType[method.getParameterCount()];
-
-            Type[] parameterRawTypes = method.getGenericParameterTypes();
-            for (int i = 0; i < parameterRawTypes.length; i++) {
-                parameterTypes[i] = new ParameterType(parameterRawTypes[i],
-                                                      parameterRawTypes[i]);
-            }
+            this.parameterTypes = method.getGenericParameterTypes();
         }
 
         public Object invoke(Object[] args) throws InvocationTargetException, IllegalAccessException {
@@ -73,7 +67,7 @@ public class ServiceRegistry {
             return isOneway;
         }
 
-        public ParameterType[] getParameterTypes() {
+        public Type[] getParameterTypes() {
             return parameterTypes;
         }
     }
