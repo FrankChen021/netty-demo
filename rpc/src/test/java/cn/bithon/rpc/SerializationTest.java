@@ -1,17 +1,15 @@
 package cn.bithon.rpc;
 
 import cn.bithon.rpc.message.BinarySerializer;
-import com.alibaba.fastjson.JSON;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
-import lombok.Builder;
-import lombok.Data;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -25,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SerializationTest {
 
     @Test
-    public void serialization() throws IOException {
+    public void testSerialization() throws IOException {
         BinarySerializer serializer = new BinarySerializer();
 
         byte[] bytes;
@@ -34,12 +32,19 @@ public class SerializationTest {
             serializer.serialize(true, os);
             serializer.serialize(false, os);
             serializer.serialize('a', os);
+            serializer.serialize((char) 0xFFFF, os);
             serializer.serialize((byte) 0xb, os);
             serializer.serialize((short) 0xbb, os);
             serializer.serialize(5, os);
             serializer.serialize(50L, os);
             serializer.serialize(5.9f, os);
             serializer.serialize(6.9d, os);
+            serializer.serialize(new int[]{1, 3, 5}, os);
+            serializer.serialize(new byte[]{9, 11, 13}, os);
+            serializer.serialize(new short[]{119, 111, 113}, os);
+            serializer.serialize(new long[]{1119, 1111, 1113}, os);
+            serializer.serialize(new float[]{2119, 2111, 2113}, os);
+            serializer.serialize(new double[]{3119, 3111, 3113}, os);
             os.flush();
             bytes = bos.toByteArray();
         }
@@ -48,17 +53,61 @@ public class SerializationTest {
         Assert.assertEquals(true, serializer.deserialize(is, boolean.class));
         Assert.assertEquals(false, serializer.deserialize(is, boolean.class));
         Assert.assertEquals((long) 'a', (long) serializer.deserialize(is, char.class));
+        Assert.assertEquals((long) 0xFFFF, (long) serializer.deserialize(is, char.class));
         Assert.assertEquals(0xb, (long) serializer.deserialize(is, byte.class));
         Assert.assertEquals(0xbb, (long) serializer.deserialize(is, short.class));
         Assert.assertEquals(5, (long) serializer.deserialize(is, int.class));
         Assert.assertEquals((Object) 50L, serializer.deserialize(is, Long.class));
         Assert.assertEquals((Object) 5.9f, serializer.deserialize(is, float.class));
         Assert.assertEquals((Object) 6.9d, serializer.deserialize(is, double.class));
+        Assert.assertArrayEquals(new int[]{1, 3, 5}, serializer.deserialize(is, int[].class));
+        Assert.assertArrayEquals(new byte[]{9, 11, 13}, serializer.deserialize(is, byte[].class));
+        Assert.assertArrayEquals(new short[]{119, 111, 113}, serializer.deserialize(is, short[].class));
+        Assert.assertArrayEquals(new long[]{1119, 1111, 1113}, serializer.deserialize(is, long[].class));
+        Assert.assertArrayEquals(new float[]{2119, 2111, 2113}, serializer.deserialize(is, float[].class), 0.000001f);
+        Assert.assertArrayEquals(new double[]{3119, 3111, 3113}, serializer.deserialize(is, double[].class), 0.00001d);
         Assert.assertTrue(is.isAtEnd());
     }
 
     @Test
-    public void serializationProtoBuffer() throws IOException {
+    public void testPrimitiveSerialization() throws IOException {
+        BinarySerializer serializer = new BinarySerializer();
+
+        Integer i = 11;
+        Float f = 11.1f;
+        Double d = 12.2d;
+        Long l = 13L;
+        Short s = 14;
+        Byte b = 15;
+
+        byte[] bytes;
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+
+            CodedOutputStream os = CodedOutputStream.newInstance(bos);
+            serializer.serialize(i, os);
+            serializer.serialize(f, os);
+            serializer.serialize(d, os);
+            serializer.serialize(l, os);
+            serializer.serialize(s, os);
+            serializer.serialize(b, os);
+            os.flush();
+            bytes = bos.toByteArray();
+        }
+
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Assert.assertEquals(i, serializer.deserialize(is, int.class));
+            Assert.assertEquals(f, serializer.deserialize(is, float.class));
+            Assert.assertEquals(d, serializer.deserialize(is, Double.class));
+            Assert.assertEquals(l, serializer.deserialize(is, Long.class));
+            Assert.assertEquals(s, serializer.deserialize(is, Short.class));
+            Assert.assertEquals(b, serializer.deserialize(is, Byte.class));
+            Assert.assertTrue(is.isAtEnd());
+        }
+    }
+
+    @Test
+    public void testSerializationProtoBuffer() throws IOException {
         BinarySerializer serializer = new BinarySerializer();
 
         byte[] bytes;
@@ -83,11 +132,8 @@ public class SerializationTest {
         Assert.assertTrue(is.isAtEnd());
     }
 
-    public static class RequestMetrics extends HashMap<String, WebRequestMetrics> {
-    }
-
     @Test
-    public void MapSerialization() throws IOException {
+    public void testMapSerialization() throws IOException {
         BinarySerializer serializer = new BinarySerializer();
 
         RequestMetrics mapObject = new RequestMetrics();
@@ -116,8 +162,9 @@ public class SerializationTest {
         // Map
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
-            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is, new BinarySerializer.TypeReference<Map<String, WebRequestMetrics>>() {
-            });
+            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is,
+                                                                            new BinarySerializer.TypeReference<Map<String, WebRequestMetrics>>() {
+                                                                            });
             Assert.assertEquals(mapObject, metrics);
             Assert.assertTrue(is.isAtEnd());
         }
@@ -125,8 +172,9 @@ public class SerializationTest {
         // Hash Map
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
-            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is, new BinarySerializer.TypeReference<HashMap<String, WebRequestMetrics>>() {
-            });
+            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is,
+                                                                            new BinarySerializer.TypeReference<HashMap<String, WebRequestMetrics>>() {
+                                                                            });
             Assert.assertEquals(mapObject, metrics);
             Assert.assertTrue(is.isAtEnd());
         }
@@ -134,8 +182,9 @@ public class SerializationTest {
         // ConcurrentHashMap
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
-            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is, new BinarySerializer.TypeReference<ConcurrentHashMap<String, WebRequestMetrics>>() {
-            });
+            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is,
+                                                                            new BinarySerializer.TypeReference<ConcurrentHashMap<String, WebRequestMetrics>>() {
+                                                                            });
             Assert.assertEquals(mapObject, metrics);
             Assert.assertTrue(is.isAtEnd());
         }
@@ -143,15 +192,16 @@ public class SerializationTest {
         // Hashtable
         {
             CodedInputStream is = CodedInputStream.newInstance(bytes);
-            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is, new BinarySerializer.TypeReference<Hashtable<String, WebRequestMetrics>>() {
-            });
+            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is,
+                                                                            new BinarySerializer.TypeReference<Hashtable<String, WebRequestMetrics>>() {
+                                                                            });
             Assert.assertEquals(mapObject, metrics);
             Assert.assertTrue(is.isAtEnd());
         }
     }
 
     @Test
-    public void CollectionSerialization() throws IOException {
+    public void testCollectionSerialization() throws IOException {
         BinarySerializer serializer = new BinarySerializer();
 
         List<WebRequestMetrics> metrics1 = new ArrayList<>();
@@ -167,6 +217,15 @@ public class SerializationTest {
             serializer.serialize(metrics1, os);
             os.flush();
             bytes = bos.toByteArray();
+        }
+
+        // Customer list
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            CustomerList metrics2 = serializer.deserialize(is,
+                                                           CustomerList.class);
+            Assert.assertEquals(metrics1.get(0), metrics2.get(0));
+            Assert.assertTrue(is.isAtEnd());
         }
 
         // List
@@ -218,21 +277,147 @@ public class SerializationTest {
             Assert.assertEquals(new LinkedList<>(metrics1), metrics2);
             Assert.assertTrue(is.isAtEnd());
         }
-    }
 
-    @Data
-    @Builder
-    public static class Composite {
-        private int a;
-        private int b;
-    }
-
-    public static class MapObject extends HashMap<String, Composite> {
+        // Array
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            WebRequestMetrics[] metrics2 = serializer.deserialize(is,
+                                                                  WebRequestMetrics[].class);
+            Assert.assertEquals(metrics1, Arrays.asList(metrics2));
+            Assert.assertTrue(is.isAtEnd());
+        }
     }
 
     @Test
-    public void test() {
-        String json = "{\"a\":{\"a\":1,\"b\":2}}";
-        MapObject mapObject = JSON.parseObject(json, MapObject.class);
+    public void testObjectArraySerialization() throws IOException {
+        BinarySerializer serializer = new BinarySerializer();
+
+        WebRequestMetrics[] metrics1 = new WebRequestMetrics[]{
+            WebRequestMetrics.newBuilder()
+                             .setCount4Xx(4)
+                             .setCount5Xx(5)
+                             .setRequests(9)
+                             .setUri("/info")
+                .build()
+        };
+        byte[] bytes;
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            CodedOutputStream os = CodedOutputStream.newInstance(bos);
+            serializer.serialize(metrics1, os);
+            os.flush();
+            bytes = bos.toByteArray();
+        }
+
+        // Array
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            WebRequestMetrics[] metrics2 = serializer.deserialize(is,
+                                                                  WebRequestMetrics[].class);
+            Assert.assertArrayEquals(metrics1, metrics2);
+            Assert.assertTrue(is.isAtEnd());
+        }
+
+        // Queue
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Queue<WebRequestMetrics> metrics2 = serializer.deserialize(is,
+                                                                       new BinarySerializer.TypeReference<Queue<WebRequestMetrics>>() {
+                                                                       });
+            Assert.assertEquals(Arrays.asList(metrics1), metrics2);
+            Assert.assertTrue(is.isAtEnd());
+        }
+    }
+
+    @Test
+    public void testPrimitiveArraySerialization() throws IOException {
+        BinarySerializer serializer = new BinarySerializer();
+
+        byte[] bytes;
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            CodedOutputStream os = CodedOutputStream.newInstance(bos);
+            serializer.serialize(new char[]{0xFFFF, 0xABCD}, os);
+            serializer.serialize(new int[]{1, 3, 5}, os);
+            serializer.serialize(new Integer[]{11, 13, 15}, os);
+            os.flush();
+            bytes = bos.toByteArray();
+        }
+
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Assert.assertArrayEquals(new char[]{0xFFFF, 0xABCD}, serializer.deserialize(is, char[].class));
+            Assert.assertArrayEquals(new int[]{1, 3, 5}, serializer.deserialize(is, int[].class));
+            Assert.assertArrayEquals(new int[]{11, 13, 15}, serializer.deserialize(is, int[].class));
+            Assert.assertTrue(is.isAtEnd());
+        }
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Assert.assertArrayEquals(new Character[]{0xFFFF, 0xABCD}, serializer.deserialize(is, Character[].class));
+            Assert.assertArrayEquals(new Integer[]{1, 3, 5}, serializer.deserialize(is, Integer[].class));
+            Assert.assertArrayEquals(new Integer[]{11, 13, 15}, serializer.deserialize(is, Integer[].class));
+            Assert.assertTrue(is.isAtEnd());
+        }
+    }
+
+    @Test
+    public void testEmptyArraySerialization() throws IOException {
+        BinarySerializer serializer = new BinarySerializer();
+
+        WebRequestMetrics[] metrics1 = new WebRequestMetrics[]{
+        };
+        byte[] bytes;
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            CodedOutputStream os = CodedOutputStream.newInstance(bos);
+            serializer.serialize(metrics1, os);
+            os.flush();
+            bytes = bos.toByteArray();
+        }
+
+        // Array
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            WebRequestMetrics[] metrics2 = serializer.deserialize(is,
+                                                                  WebRequestMetrics[].class);
+            Assert.assertArrayEquals(metrics1, metrics2);
+            Assert.assertTrue(is.isAtEnd());
+        }
+
+        // Queue
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Queue<WebRequestMetrics> metrics2 = serializer.deserialize(is,
+                                                                       new BinarySerializer.TypeReference<Queue<WebRequestMetrics>>() {
+                                                                       });
+            Assert.assertEquals(Arrays.asList(metrics1), metrics2);
+            Assert.assertTrue(is.isAtEnd());
+        }
+    }
+
+    @Test
+    public void testStringSerialization() throws IOException {
+        BinarySerializer serializer = new BinarySerializer();
+
+        byte[] bytes;
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            CodedOutputStream os = CodedOutputStream.newInstance(bos);
+            serializer.serialize("123456", os);
+            serializer.serialize(new String[]{"123456", "54321"}, os);
+            os.flush();
+            bytes = bos.toByteArray();
+        }
+
+        // Array
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Assert.assertEquals("123456", serializer.deserialize(is,
+                                                                 String.class));
+            Assert.assertArrayEquals(new String[]{"123456", "54321"}, serializer.deserialize(is, String[].class));
+            Assert.assertTrue(is.isAtEnd());
+        }
+    }
+
+    public static class RequestMetrics extends HashMap<String, WebRequestMetrics> {
+    }
+
+    public static class CustomerList extends ArrayList<WebRequestMetrics> {
     }
 }

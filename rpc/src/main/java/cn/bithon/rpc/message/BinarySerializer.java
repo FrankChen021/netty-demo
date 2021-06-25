@@ -4,12 +4,16 @@ package cn.bithon.rpc.message;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.MessageLite;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
@@ -36,53 +40,6 @@ import java.util.concurrent.ConcurrentMap;
 
 public class BinarySerializer {
 
-    public abstract static class TypeReference<T> implements Comparable<TypeReference<T>> {
-        protected final Type _type;
-
-        protected TypeReference() {
-            Type superClass = this.getClass().getGenericSuperclass();
-            if (superClass instanceof Class) {
-                throw new IllegalArgumentException(
-                    "Internal error: TypeReference constructed without actual type information");
-            } else {
-                this._type = ((ParameterizedType) superClass).getActualTypeArguments()[0];
-            }
-        }
-
-        public Type getType() {
-            return this._type;
-        }
-
-        @Override
-        public int compareTo(TypeReference<T> o) {
-            return 0;
-        }
-
-        public static Class<?> getRawClass(Type type) {
-            if (type instanceof Class<?>) {
-                return (Class<?>) type;
-            } else if (type instanceof ParameterizedType) {
-                return getRawClass(((ParameterizedType) type).getRawType());
-            } else if (type instanceof WildcardType) {
-                WildcardType wildcardType = (WildcardType) type;
-                Type[] upperBounds = wildcardType.getUpperBounds();
-                if (upperBounds.length == 1) {
-                    return getRawClass(upperBounds[0]);
-                } else {
-                    throw new IllegalStateException("TODO");
-                }
-            } else {
-                throw new IllegalStateException("TODO");
-            }
-        }
-    }
-
-    interface IObjectSerializer {
-        void serialize(Object obj, CodedOutputStream os) throws IOException;
-
-        Object deserialize(Type type, CodedInputStream is) throws IOException;
-    }
-
     public void serialize(MessageLite obj, CodedOutputStream os) throws IOException {
         ProtocolBufferSerializer.INSTANCE.serialize(obj, os);
     }
@@ -103,7 +60,6 @@ public class BinarySerializer {
         ObjectSerializer.INSTANCE.serialize(obj, os);
     }
 
-
     @SuppressWarnings("unchecked")
     public <T> T deserialize(CodedInputStream is, Class<T> clazz) throws IOException {
         return (T) ObjectSerializer.INSTANCE.deserialize(clazz, is);
@@ -114,11 +70,85 @@ public class BinarySerializer {
         return (T) ObjectSerializer.INSTANCE.deserialize(typeReference.getType(), is);
     }
 
+    interface IObjectSerializer {
+        void serialize(Object obj, CodedOutputStream os) throws IOException;
+
+        Object deserialize(Type type, CodedInputStream is) throws IOException;
+    }
+
+    public abstract static class TypeReference<T> implements Comparable<TypeReference<T>> {
+        protected final Type _type;
+
+        protected TypeReference() {
+            Type superClass = this.getClass().getGenericSuperclass();
+            if (superClass instanceof Class) {
+                throw new IllegalArgumentException(
+                    "Internal error: TypeReference constructed without actual type information");
+            } else {
+                this._type = ((ParameterizedType) superClass).getActualTypeArguments()[0];
+            }
+        }
+
+        public static Class<?> getRawClass(Type type) {
+            if (type instanceof Class<?>) {
+                return (Class<?>) type;
+            } else if (type instanceof ParameterizedType) {
+                return getRawClass(((ParameterizedType) type).getRawType());
+            } else if (type instanceof WildcardType) {
+                WildcardType wildcardType = (WildcardType) type;
+                Type[] upperBounds = wildcardType.getUpperBounds();
+                if (upperBounds.length == 1) {
+                    return getRawClass(upperBounds[0]);
+                } else {
+                    throw new IllegalStateException("TODO");
+                }
+            } else {
+                throw new IllegalStateException("TODO");
+            }
+        }
+
+        public static Class<?> getClass(Type type) {
+            if (type.getClass() == Class.class) {
+                return (Class<?>) type;
+            }
+
+            if (type instanceof ParameterizedType) {
+                return getClass(((ParameterizedType) type).getRawType());
+            }
+
+            if (type instanceof TypeVariable) {
+                Type boundType = ((TypeVariable<?>) type).getBounds()[0];
+                if (boundType instanceof Class) {
+                    return (Class<?>) boundType;
+                }
+                return getClass(boundType);
+            }
+
+            if (type instanceof WildcardType) {
+                Type[] upperBounds = ((WildcardType) type).getUpperBounds();
+                if (upperBounds.length == 1) {
+                    return getClass(upperBounds[0]);
+                }
+            }
+
+            return Object.class;
+        }
+
+        public Type getType() {
+            return this._type;
+        }
+
+        @Override
+        public int compareTo(TypeReference<T> o) {
+            return 0;
+        }
+    }
+
     private static class ObjectSerializer implements IObjectSerializer {
 
         public static final ObjectSerializer INSTANCE = new ObjectSerializer();
 
-        private Map<Type, IObjectSerializer> serializers = new HashMap<>();
+        private final Map<Type, IObjectSerializer> serializers = new HashMap<>();
 
         public ObjectSerializer() {
             serializers.put(boolean.class, BooleanSerializer.INSTANCE);
@@ -133,8 +163,8 @@ public class BinarySerializer {
             serializers.put(short.class, ShortSerializer.INSTANCE);
             serializers.put(Short.class, ShortSerializer.INSTANCE);
 
-            serializers.put(int.class, IntSerializer.INSTANCE);
-            serializers.put(Integer.class, IntSerializer.INSTANCE);
+            serializers.put(int.class, IntegerSerializer.INSTANCE);
+            serializers.put(Integer.class, IntegerSerializer.INSTANCE);
 
             serializers.put(float.class, FloatSerializer.INSTANCE);
             serializers.put(Float.class, FloatSerializer.INSTANCE);
@@ -144,6 +174,14 @@ public class BinarySerializer {
 
             serializers.put(long.class, LongSerializer.INSTANCE);
             serializers.put(Long.class, LongSerializer.INSTANCE);
+
+            serializers.put(char[].class, new CharArraySerializer());
+            serializers.put(byte[].class, new ByteArraySerializer());
+            serializers.put(short[].class, new ShortArraySerializer());
+            serializers.put(int[].class, new IntegerArraySerializer());
+            serializers.put(long[].class, new LongArraySerializer());
+            serializers.put(float[].class, new FloatArraySerializer());
+            serializers.put(double[].class, new DoubleArraySerializer());
 
             serializers.put(String.class, new StringSerializer());
         }
@@ -208,8 +246,8 @@ public class BinarySerializer {
         }
     }
 
-    private static class IntSerializer implements IObjectSerializer {
-        public static final IObjectSerializer INSTANCE = new IntSerializer();
+    private static class IntegerSerializer implements IObjectSerializer {
+        public static final IObjectSerializer INSTANCE = new IntegerSerializer();
 
         @Override
         public void serialize(Object obj, CodedOutputStream os) throws IOException {
@@ -309,46 +347,17 @@ public class BinarySerializer {
 
         @Override
         public void serialize(Object obj, CodedOutputStream os) throws IOException {
-            os.write((byte) (char) obj);
+            os.writeInt32NoTag((char) obj);
         }
 
         @Override
         public Object deserialize(Type type, CodedInputStream is) throws IOException {
-            return (char) is.readRawByte();
+            return (char) is.readInt32();
         }
     }
 
     private static class CollectionSerializer implements IObjectSerializer {
         public static final CollectionSerializer INSTANCE = new CollectionSerializer();
-
-        @Override
-        public void serialize(Object obj, CodedOutputStream os) throws IOException {
-            Collection<?> collection = (Collection<?>) obj;
-            os.writeInt32NoTag(collection.size());
-            for (Object o : collection) {
-                ObjectSerializer.INSTANCE.serialize(o, os);
-            }
-        }
-
-        @Override
-        public Object deserialize(Type type, CodedInputStream is) throws IOException {
-            Type superType = type;
-            if (type instanceof Class) {
-                superType = ((Class<?>) type).getGenericSuperclass();
-            }
-            if (!(superType instanceof ParameterizedType)) {
-                throw new IllegalStateException("Unsupport Map type to deserialize: " + type.toString());
-            }
-            ParameterizedType parameterizedType = (ParameterizedType) superType;
-            Type elementType = parameterizedType.getActualTypeArguments()[0];
-
-            int size = is.readInt32();
-            Collection<Object> lists = createCollectionInstance(type, size);
-            for (int i = 0; i < size; i++) {
-                lists.add(ObjectSerializer.INSTANCE.deserialize(elementType, is));
-            }
-            return lists;
-        }
 
         @SuppressWarnings({"rawtypes", "unchecked"})
         private static Collection<Object> createCollectionInstance(Type type, int size) {
@@ -378,10 +387,41 @@ public class BinarySerializer {
                 try {
                     collection = (Collection) rawClass.newInstance();
                 } catch (Exception e) {
-                    throw new IllegalStateException("create instance error, class " + rawClass.getName());
+                    throw new IllegalStateException(String.format("Failed to create instance of [%s]:%s",
+                                                                  rawClass.getName(),
+                                                                  e.getMessage()));
                 }
             }
             return collection;
+        }
+
+        @Override
+        public void serialize(Object obj, CodedOutputStream os) throws IOException {
+            Collection<?> collection = (Collection<?>) obj;
+            os.writeInt32NoTag(collection.size());
+            for (Object o : collection) {
+                ObjectSerializer.INSTANCE.serialize(o, os);
+            }
+        }
+
+        @Override
+        public Object deserialize(Type type, CodedInputStream is) throws IOException {
+            Type superType = type;
+            if (type instanceof Class) {
+                superType = ((Class<?>) type).getGenericSuperclass();
+            }
+            if (!(superType instanceof ParameterizedType)) {
+                throw new IllegalStateException("Unsupport Map type to deserialize: " + type.toString());
+            }
+            ParameterizedType parameterizedType = (ParameterizedType) superType;
+            Type elementType = parameterizedType.getActualTypeArguments()[0];
+
+            int size = is.readInt32();
+            Collection<Object> lists = createCollectionInstance(type, size);
+            for (int i = 0; i < size; i++) {
+                lists.add(ObjectSerializer.INSTANCE.deserialize(elementType, is));
+            }
+            return lists;
         }
     }
 
@@ -520,13 +560,194 @@ public class BinarySerializer {
             }
         }
 
+        @SuppressWarnings("rawtypes")
+        @Override
+        public Object deserialize(Type type, CodedInputStream is) throws IOException {
+
+            Class componentClass;
+            Type componentType;
+            if (type instanceof GenericArrayType) {
+                GenericArrayType clazz = (GenericArrayType) type;
+                componentType = clazz.getGenericComponentType();
+                if (componentType instanceof TypeVariable) {
+                    throw new NotImplementedException();
+//                    TypeVariable typeVar = (TypeVariable) componentType;
+//                    Type objType = parser.getContext().type;
+//                    if (objType instanceof ParameterizedType) {
+//                        ParameterizedType objParamType = (ParameterizedType) objType;
+//                        Type objRawType = objParamType.getRawType();
+//                        Type actualType = null;
+//                        if (objRawType instanceof Class) {
+//                            TypeVariable[] objTypeParams = ((Class) objRawType).getTypeParameters();
+//                            for (int i = 0; i < objTypeParams.length; ++i) {
+//                                if (objTypeParams[i].getName().equals(typeVar.getName())) {
+//                                    actualType = objParamType.getActualTypeArguments()[i];
+//                                }
+//                            }
+//                        }
+//                        if (actualType instanceof Class) {
+//                            componentClass = (Class) actualType;
+//                        } else {
+//                            componentClass = Object.class;
+//                        }
+//                    } else {
+//                        componentClass = TypeReference.getClass(typeVar.getBounds()[0]);
+//                    }
+                } else {
+                    componentClass = TypeReference.getClass(componentType);
+                }
+            } else {
+                Class clazz = (Class) type;
+                componentType = componentClass = clazz.getComponentType();
+            }
+
+            int size = is.readInt32();
+
+            Object objArray = Array.newInstance((Class<?>) componentType, size);
+            for (int i = 0; i < size; i++) {
+                Array.set(objArray, i, ObjectSerializer.INSTANCE.deserialize(componentType, is));
+            }
+            return objArray;
+        }
+    }
+
+    private static class CharArraySerializer implements IObjectSerializer {
+        @Override
+        public void serialize(Object obj, CodedOutputStream os) throws IOException {
+            char[] arr = (char[]) obj;
+            os.writeInt32NoTag(arr.length);
+            for (char chr : arr) {
+                os.writeInt32NoTag(chr);
+            }
+        }
+
+        @Override
+        public Object deserialize(Type type, CodedInputStream is) throws IOException {
+            char[] arr = new char[is.readInt32()];
+            for (int i = 0; i < arr.length; i++) {
+                arr[i] = (char) is.readInt32();
+            }
+            return arr;
+        }
+    }
+
+    private static class ByteArraySerializer implements IObjectSerializer {
+        @Override
+        public void serialize(Object obj, CodedOutputStream os) throws IOException {
+            byte[] bytes = (byte[]) obj;
+            os.writeInt32NoTag(bytes.length);
+            os.write(bytes, 0, bytes.length);
+        }
+
         @Override
         public Object deserialize(Type type, CodedInputStream is) throws IOException {
             int size = is.readInt32();
-            for (int i = 0; i < size; i++) {
+            return is.readRawBytes(size);
+        }
+    }
 
+    private static class ShortArraySerializer implements IObjectSerializer {
+        @Override
+        public void serialize(Object obj, CodedOutputStream os) throws IOException {
+            short[] arr = (short[]) obj;
+            os.writeInt32NoTag(arr.length);
+            for (short i : arr) {
+                os.writeInt32NoTag(i);
             }
-            return null;
+        }
+
+        @Override
+        public Object deserialize(Type type, CodedInputStream is) throws IOException {
+            int size = is.readInt32();
+            short[] arr = new short[size];
+            for (int i = 0; i < size; i++) {
+                arr[i] = (short) is.readInt32();
+            }
+            return arr;
+        }
+    }
+
+    private static class IntegerArraySerializer implements IObjectSerializer {
+        @Override
+        public void serialize(Object obj, CodedOutputStream os) throws IOException {
+            int[] arr = (int[]) obj;
+            os.writeInt32NoTag(arr.length);
+            for (int i : arr) {
+                os.writeInt32NoTag(i);
+            }
+        }
+
+        @Override
+        public Object deserialize(Type type, CodedInputStream is) throws IOException {
+            int size = is.readInt32();
+            int[] arr = new int[size];
+            for (int i = 0; i < size; i++) {
+                arr[i] = is.readInt32();
+            }
+            return arr;
+        }
+    }
+
+    private static class LongArraySerializer implements IObjectSerializer {
+        @Override
+        public void serialize(Object obj, CodedOutputStream os) throws IOException {
+            long[] arr = (long[]) obj;
+            os.writeInt32NoTag(arr.length);
+            for (long i : arr) {
+                os.writeInt64NoTag(i);
+            }
+        }
+
+        @Override
+        public Object deserialize(Type type, CodedInputStream is) throws IOException {
+            int size = is.readInt32();
+            long[] arr = new long[size];
+            for (int i = 0; i < size; i++) {
+                arr[i] = is.readInt64();
+            }
+            return arr;
+        }
+    }
+
+    private static class DoubleArraySerializer implements IObjectSerializer {
+        @Override
+        public void serialize(Object obj, CodedOutputStream os) throws IOException {
+            double[] arr = (double[]) obj;
+            os.writeInt32NoTag(arr.length);
+            for (double i : arr) {
+                os.writeDoubleNoTag(i);
+            }
+        }
+
+        @Override
+        public Object deserialize(Type type, CodedInputStream is) throws IOException {
+            int size = is.readInt32();
+            double[] arr = new double[size];
+            for (int i = 0; i < size; i++) {
+                arr[i] = is.readDouble();
+            }
+            return arr;
+        }
+    }
+
+    private static class FloatArraySerializer implements IObjectSerializer {
+        @Override
+        public void serialize(Object obj, CodedOutputStream os) throws IOException {
+            float[] arr = (float[]) obj;
+            os.writeInt32NoTag(arr.length);
+            for (float i : arr) {
+                os.writeFloatNoTag(i);
+            }
+        }
+
+        @Override
+        public Object deserialize(Type type, CodedInputStream is) throws IOException {
+            int size = is.readInt32();
+            float[] arr = new float[size];
+            for (int i = 0; i < size; i++) {
+                arr[i] = is.readFloat();
+            }
+            return arr;
         }
     }
 }
