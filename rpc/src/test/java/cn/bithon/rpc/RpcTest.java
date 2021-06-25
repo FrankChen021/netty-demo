@@ -35,7 +35,7 @@ public class RpcTest {
     }
 
     @Test
-    public void test() {
+    public void test() throws Exception {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
             IExampleService example = ch.getRemoteService(IExampleService.class);
             IServiceController invoker = (IServiceController) example;

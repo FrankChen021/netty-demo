@@ -58,11 +58,17 @@ public class BinarySerializer {
 
     public void serialize(Object obj, CodedOutputStream os) throws IOException {
         ObjectSerializer.INSTANCE.serialize(obj, os);
+        os.flush();
     }
 
     @SuppressWarnings("unchecked")
     public <T> T deserialize(CodedInputStream is, Class<T> clazz) throws IOException {
         return (T) ObjectSerializer.INSTANCE.deserialize(clazz, is);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T deserialize(CodedInputStream is, Type type) throws IOException {
+        return (T) ObjectSerializer.INSTANCE.deserialize(type, is);
     }
 
     @SuppressWarnings("unchecked")
@@ -148,9 +154,9 @@ public class BinarySerializer {
 
         public static final ObjectSerializer INSTANCE = new ObjectSerializer();
 
-        private final Map<Type, IObjectSerializer> serializers = new HashMap<>();
+        private static final Map<Type, IObjectSerializer> serializers = new HashMap<>();
 
-        public ObjectSerializer() {
+        static {
             serializers.put(boolean.class, BooleanSerializer.INSTANCE);
             serializers.put(Boolean.class, BooleanSerializer.INSTANCE);
 
