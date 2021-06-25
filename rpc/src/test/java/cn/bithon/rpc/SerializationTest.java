@@ -1,19 +1,32 @@
 package cn.bithon.rpc;
 
-import cn.bithon.rpc.message.ObjectBinarySerializer;
+import cn.bithon.rpc.message.BinarySerializer;
+import com.alibaba.fastjson.JSON;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
+import lombok.Builder;
+import lombok.Data;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SerializationTest {
 
     @Test
     public void serialization() throws IOException {
-        ObjectBinarySerializer serializer = new ObjectBinarySerializer();
+        BinarySerializer serializer = new BinarySerializer();
 
         byte[] bytes;
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -21,8 +34,8 @@ public class SerializationTest {
             serializer.serialize(true, os);
             serializer.serialize(false, os);
             serializer.serialize('a', os);
-            serializer.serialize((byte)0xb, os);
-            serializer.serialize((short)0xbb, os);
+            serializer.serialize((byte) 0xb, os);
+            serializer.serialize((short) 0xbb, os);
             serializer.serialize(5, os);
             serializer.serialize(50L, os);
             serializer.serialize(5.9f, os);
@@ -46,7 +59,7 @@ public class SerializationTest {
 
     @Test
     public void serializationProtoBuffer() throws IOException {
-        ObjectBinarySerializer serializer = new ObjectBinarySerializer();
+        BinarySerializer serializer = new BinarySerializer();
 
         byte[] bytes;
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -68,5 +81,158 @@ public class SerializationTest {
         Assert.assertEquals(9, metrics.getRequests());
         Assert.assertEquals("/info", metrics.getUri());
         Assert.assertTrue(is.isAtEnd());
+    }
+
+    public static class RequestMetrics extends HashMap<String, WebRequestMetrics> {
+    }
+
+    @Test
+    public void MapSerialization() throws IOException {
+        BinarySerializer serializer = new BinarySerializer();
+
+        RequestMetrics mapObject = new RequestMetrics();
+        mapObject.put("/info", WebRequestMetrics.newBuilder()
+                                                .setCount4Xx(4)
+                                                .setCount5Xx(5)
+                                                .setRequests(9)
+                                                .setUri("/info")
+                                                .build());
+        byte[] bytes;
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            CodedOutputStream os = CodedOutputStream.newInstance(bos);
+            serializer.serialize(mapObject, os);
+            os.flush();
+            bytes = bos.toByteArray();
+        }
+
+        // customer class
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            RequestMetrics metrics = serializer.deserialize(is, RequestMetrics.class);
+            Assert.assertEquals(mapObject, metrics);
+            Assert.assertTrue(is.isAtEnd());
+        }
+
+        // Map
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is, new BinarySerializer.TypeReference<Map<String, WebRequestMetrics>>() {
+            });
+            Assert.assertEquals(mapObject, metrics);
+            Assert.assertTrue(is.isAtEnd());
+        }
+
+        // Hash Map
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is, new BinarySerializer.TypeReference<HashMap<String, WebRequestMetrics>>() {
+            });
+            Assert.assertEquals(mapObject, metrics);
+            Assert.assertTrue(is.isAtEnd());
+        }
+
+        // ConcurrentHashMap
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is, new BinarySerializer.TypeReference<ConcurrentHashMap<String, WebRequestMetrics>>() {
+            });
+            Assert.assertEquals(mapObject, metrics);
+            Assert.assertTrue(is.isAtEnd());
+        }
+
+        // Hashtable
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Map<String, WebRequestMetrics> metrics = serializer.deserialize(is, new BinarySerializer.TypeReference<Hashtable<String, WebRequestMetrics>>() {
+            });
+            Assert.assertEquals(mapObject, metrics);
+            Assert.assertTrue(is.isAtEnd());
+        }
+    }
+
+    @Test
+    public void CollectionSerialization() throws IOException {
+        BinarySerializer serializer = new BinarySerializer();
+
+        List<WebRequestMetrics> metrics1 = new ArrayList<>();
+        metrics1.add(WebRequestMetrics.newBuilder()
+                                      .setCount4Xx(4)
+                                      .setCount5Xx(5)
+                                      .setRequests(9)
+                                      .setUri("/info")
+                                      .build());
+        byte[] bytes;
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            CodedOutputStream os = CodedOutputStream.newInstance(bos);
+            serializer.serialize(metrics1, os);
+            os.flush();
+            bytes = bos.toByteArray();
+        }
+
+        // List
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            List<WebRequestMetrics> metrics2 = serializer.deserialize(is,
+                                                                      new BinarySerializer.TypeReference<List<WebRequestMetrics>>() {
+                                                                      });
+            Assert.assertEquals(metrics1, metrics2);
+            Assert.assertTrue(is.isAtEnd());
+        }
+
+        // ArrayList
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            List<WebRequestMetrics> metrics2 = serializer.deserialize(is,
+                                                                      new BinarySerializer.TypeReference<ArrayList<WebRequestMetrics>>() {
+                                                                      });
+            Assert.assertEquals(metrics1, metrics2);
+            Assert.assertTrue(is.isAtEnd());
+        }
+
+        // Set
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Set<WebRequestMetrics> metrics2 = serializer.deserialize(is,
+                                                                     new BinarySerializer.TypeReference<Set<WebRequestMetrics>>() {
+                                                                     });
+            Assert.assertEquals(new HashSet<>(metrics1), metrics2);
+            Assert.assertTrue(is.isAtEnd());
+        }
+
+        // LinkedList
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            LinkedList<WebRequestMetrics> metrics2 = serializer.deserialize(is,
+                                                                            new BinarySerializer.TypeReference<LinkedList<WebRequestMetrics>>() {
+                                                                            });
+            Assert.assertEquals(metrics1, metrics2);
+            Assert.assertTrue(is.isAtEnd());
+        }
+
+        // Queue
+        {
+            CodedInputStream is = CodedInputStream.newInstance(bytes);
+            Queue<WebRequestMetrics> metrics2 = serializer.deserialize(is,
+                                                                       new BinarySerializer.TypeReference<Queue<WebRequestMetrics>>() {
+                                                                       });
+            Assert.assertEquals(new LinkedList<>(metrics1), metrics2);
+            Assert.assertTrue(is.isAtEnd());
+        }
+    }
+
+    @Data
+    @Builder
+    public static class Composite {
+        private int a;
+        private int b;
+    }
+
+    public static class MapObject extends HashMap<String, Composite> {
+    }
+
+    @Test
+    public void test() {
+        String json = "{\"a\":{\"a\":1,\"b\":2}}";
+        MapObject mapObject = JSON.parseObject(json, MapObject.class);
     }
 }
