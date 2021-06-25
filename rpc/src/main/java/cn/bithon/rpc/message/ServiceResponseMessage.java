@@ -9,6 +9,10 @@ public class ServiceResponseMessage extends ServiceMessage {
     private byte[] returning;
     private CharSequence exception;
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     @Override
     public int getMessageType() {
         return ServiceMessageType.SERVER_RESPONSE;
@@ -56,10 +60,6 @@ public class ServiceResponseMessage extends ServiceMessage {
 
     public void setException(CharSequence exception) {
         this.exception = exception;
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     static public class Builder {

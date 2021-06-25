@@ -2,7 +2,7 @@ package cn.bithon.rpc.exception;
 
 public class ServiceInvocationException extends RuntimeException {
     public ServiceInvocationException(CharSequence message) {
-        super(message instanceof String ? (String)message : message.toString());
+        super(message instanceof String ? (String) message : message.toString());
     }
 
     public ServiceInvocationException(String messageFormat, Object... args) {

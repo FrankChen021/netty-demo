@@ -29,30 +29,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ClientInvocationManager {
 
     private static final ClientInvocationManager INSTANCE = new ClientInvocationManager();
+    private final AtomicLong transactionId = new AtomicLong(21515);
+    private final ObjectMapper om = new JsonMapper();
+    private final Map<Long, InflightRequest> inflightRequests = new ConcurrentHashMap<>();
 
     public static ClientInvocationManager getInstance() {
         return INSTANCE;
     }
-
-    @Data
-    static class InflightRequest {
-        private CharSequence serviceName;
-        private CharSequence methodName;
-        long requestAt;
-        long responseAt;
-        Class<?> returnObjType;
-        Object response;
-        /**
-         * indicate whether this request has response.
-         * This is required so that {@link #response} might be null
-         */
-        boolean returned;
-        CharSequence exception;
-    }
-
-    private final AtomicLong transactionId = new AtomicLong(21515);
-    private final ObjectMapper om = new JsonMapper();
-    private final Map<Long, InflightRequest> inflightRequests = new ConcurrentHashMap<>();
 
     public Object invoke(IChannelWriter channelWriter, boolean debug, long timeout, Method method, Object[] args) {
         //
@@ -155,5 +138,21 @@ public class ClientInvocationManager {
             inflightRequest.returned = true;
             inflightRequest.notify();
         }
+    }
+
+    @Data
+    static class InflightRequest {
+        long requestAt;
+        long responseAt;
+        Class<?> returnObjType;
+        Object response;
+        /**
+         * indicate whether this request has response.
+         * This is required so that {@link #response} might be null
+         */
+        boolean returned;
+        CharSequence exception;
+        private CharSequence serviceName;
+        private CharSequence methodName;
     }
 }

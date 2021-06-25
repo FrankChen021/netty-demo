@@ -14,6 +14,10 @@ public class ServiceRequestMessage extends ServiceMessage {
      */
     private byte[] args;
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     @Override
     public int getMessageType() {
         return ServiceMessageType.CLIENT_REQUEST;
@@ -40,8 +44,16 @@ public class ServiceRequestMessage extends ServiceMessage {
         return this;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public CharSequence getServiceName() {
+        return serviceName;
+    }
+
+    public CharSequence getMethodName() {
+        return methodName;
+    }
+
+    public byte[] getArgs() {
+        return args;
     }
 
     public static class Builder {
@@ -71,17 +83,5 @@ public class ServiceRequestMessage extends ServiceMessage {
         public ServiceRequestMessage build() {
             return request;
         }
-    }
-
-    public CharSequence getServiceName() {
-        return serviceName;
-    }
-
-    public CharSequence getMethodName() {
-        return methodName;
-    }
-
-    public byte[] getArgs() {
-        return args;
     }
 }

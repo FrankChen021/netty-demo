@@ -36,6 +36,7 @@ public class ServerChannel implements Closeable {
      * 服务端的请求直接在worker线程中处理，无需单独定义线程池
      */
     private final ServiceMessageChannelHandler channelReader = new ServiceMessageChannelHandler(serviceRegistry);
+    private final Map<EndPoint, ClientService> clientServices = new ConcurrentHashMap<>();
 
     public <T extends IService> ServerChannel bindService(Class<T> interfaceClass, T impl) {
         serviceRegistry.addService(interfaceClass, impl);
@@ -97,36 +98,8 @@ public class ServerChannel implements Closeable {
         }
     }
 
-    static class ClientService {
-        public ClientService(Channel channel) {
-            this.channel = channel;
-        }
-
-        private final Channel channel;
-        private final Map<Class<? extends IService>, IService> services = new ConcurrentHashMap<>();
-    }
-
-    private final Map<EndPoint, ClientService> clientServices = new ConcurrentHashMap<>();
-
     public Set<EndPoint> getClientEndpoints() {
         return clientServices.keySet();
-    }
-
-    class ClientServiceManager extends ChannelInboundHandlerAdapter {
-        @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            InetSocketAddress socketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-            clientServices.computeIfAbsent(EndPoint.of(socketAddress),
-                                           key -> new ClientService(ctx.channel()));
-            super.channelActive(ctx);
-        }
-
-        @Override
-        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            InetSocketAddress socketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-            clientServices.remove(EndPoint.of(socketAddress));
-            super.channelInactive(ctx);
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -154,5 +127,30 @@ public class ServerChannel implements Closeable {
                                                                                                }
                                                                                            },
                                                                                            serviceClass));
+    }
+
+    static class ClientService {
+        private final Channel channel;
+        private final Map<Class<? extends IService>, IService> services = new ConcurrentHashMap<>();
+        public ClientService(Channel channel) {
+            this.channel = channel;
+        }
+    }
+
+    class ClientServiceManager extends ChannelInboundHandlerAdapter {
+        @Override
+        public void channelActive(ChannelHandlerContext ctx) throws Exception {
+            InetSocketAddress socketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+            clientServices.computeIfAbsent(EndPoint.of(socketAddress),
+                                           key -> new ClientService(ctx.channel()));
+            super.channelActive(ctx);
+        }
+
+        @Override
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+            InetSocketAddress socketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+            clientServices.remove(EndPoint.of(socketAddress));
+            super.channelInactive(ctx);
+        }
     }
 }
