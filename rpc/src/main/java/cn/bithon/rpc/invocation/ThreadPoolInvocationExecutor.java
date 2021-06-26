@@ -1,6 +1,6 @@
 package cn.bithon.rpc.invocation;
 
-import cn.bithon.rpc.message.ServiceResponseMessage;
+import cn.bithon.rpc.message.out.ServiceResponseMessageOut;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.Executor;
@@ -33,13 +33,14 @@ public class ThreadPoolInvocationExecutor implements IServiceInvocationExecutor 
         public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
             ServiceInvocationRunnable invoker = (ServiceInvocationRunnable) r;
 
-            invoker.getChannel().writeAndFlush(ServiceResponseMessage.builder()
-                                                                     .serverResponseAt(System.currentTimeMillis())
-                                                                     .transactionId(invoker.getServiceRequest()
-                                                                                           .getTransactionId())
-                                                                     .exception(
-                                                                         "Server has no enough resources to process the request.")
-                                                                     .build());
+            invoker.getChannel()
+                   .writeAndFlush(ServiceResponseMessageOut.builder()
+                                                           .serverResponseAt(System.currentTimeMillis())
+                                                           .txId(invoker.getServiceRequest()
+                                                                        .getTransactionId())
+                                                           .exception(
+                                                               "Server has no enough resources to process the request.")
+                                                           .build());
         }
     }
 }

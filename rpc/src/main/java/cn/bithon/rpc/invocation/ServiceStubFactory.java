@@ -1,7 +1,7 @@
 package cn.bithon.rpc.invocation;
 
 import cn.bithon.rpc.IService;
-import cn.bithon.rpc.IServiceHelper;
+import cn.bithon.rpc.IServiceController;
 import cn.bithon.rpc.channel.IChannelWriter;
 
 import java.lang.reflect.InvocationHandler;
@@ -13,16 +13,16 @@ public class ServiceStubFactory {
     private static Method setDebugMethod;
     private static Method toStringMethod;
     private static Method setTimeoutMethod;
-    private static Method toInvokerMethod;
+    private static Method toControllerMethod;
     private static Method rstTimeoutMethod;
 
     static {
         try {
             toStringMethod = Object.class.getMethod("toString");
-            toInvokerMethod = IService.class.getMethod("toInvoker");
-            setDebugMethod = IServiceHelper.class.getMethod("debug", boolean.class);
-            setTimeoutMethod = IServiceHelper.class.getMethod("setTimeout", long.class);
-            rstTimeoutMethod = IServiceHelper.class.getMethod("rstTimeout");
+            toControllerMethod = IService.class.getMethod("toController");
+            setDebugMethod = IServiceController.class.getMethod("debug", boolean.class);
+            setTimeoutMethod = IServiceController.class.getMethod("setTimeout", long.class);
+            rstTimeoutMethod = IServiceController.class.getMethod("rstTimeout");
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
@@ -31,21 +31,21 @@ public class ServiceStubFactory {
     @SuppressWarnings("unchecked")
     public static <T extends IService> T create(IChannelWriter channelWriter, Class<T> serviceInterface) {
         return (T) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-                                          new Class[]{serviceInterface, IServiceHelper.class},
+                                          new Class[]{serviceInterface, IServiceController.class},
                                           new ServiceInvocationHandler(channelWriter,
                                                                        ClientInvocationManager.getInstance()));
     }
 
     static class ServiceInvocationHandler implements InvocationHandler {
         private final IChannelWriter channelWriter;
-        private final ClientInvocationManager requestManager;
+        private final ClientInvocationManager clientInvocationManager;
         private boolean debugEnabled;
         private long timeout = 5000;
 
         public ServiceInvocationHandler(IChannelWriter channelWriter,
-                                        ClientInvocationManager requestManager) {
+                                        ClientInvocationManager clientInvocationManager) {
             this.channelWriter = channelWriter;
-            this.requestManager = requestManager;
+            this.clientInvocationManager = clientInvocationManager;
         }
 
         @Override
@@ -61,14 +61,14 @@ public class ServiceStubFactory {
                 this.timeout = (long) args[0];
                 return null;
             }
-            if (toInvokerMethod.equals(method)) {
+            if (toControllerMethod.equals(method)) {
                 return proxy;
             }
             if (rstTimeoutMethod.equals(method)) {
                 this.timeout = 5000;
                 return null;
             }
-            return requestManager.invoke(channelWriter, debugEnabled, timeout, method, args);
+            return clientInvocationManager.invoke(channelWriter, debugEnabled, timeout, method, args);
         }
     }
 }

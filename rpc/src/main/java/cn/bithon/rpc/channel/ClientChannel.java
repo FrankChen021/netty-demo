@@ -7,8 +7,8 @@ import cn.bithon.rpc.endpoint.IEndPointProvider;
 import cn.bithon.rpc.endpoint.SingleEndPointProvider;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.invocation.ServiceStubFactory;
-import cn.bithon.rpc.message.ServiceMessageDecoder;
-import cn.bithon.rpc.message.ServiceMessageEncoder;
+import cn.bithon.rpc.message.in.ServiceMessageInDecoder;
+import cn.bithon.rpc.message.out.ServiceMessageOutEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -40,14 +40,12 @@ public class ClientChannel implements IChannelWriter, Closeable {
     //
     public static final int MAX_RETRY = 30;
     private final Bootstrap bootstrap;
-    private NioEventLoopGroup bossGroup;
     private final AtomicReference<Channel> channel = new AtomicReference<>();
-
     private final IEndPointProvider endPointProvider;
+    private final ServiceRegistry serviceRegistry = new ServiceRegistry();
+    private NioEventLoopGroup bossGroup;
     private Duration retryInterval;
     private int maxRetry;
-
-    private final ServiceRegistry serviceRegistry = new ServiceRegistry();
 
     public ClientChannel(String host, int port) {
         this(new SingleEndPointProvider(host, port));
@@ -70,8 +68,8 @@ public class ClientChannel implements IChannelWriter, Closeable {
                          pipeline.addLast("frameDecoder",
                                           new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
                          pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
-                         pipeline.addLast("decoder", new ServiceMessageDecoder());
-                         pipeline.addLast("encoder", new ServiceMessageEncoder());
+                         pipeline.addLast("decoder", new ServiceMessageInDecoder());
+                         pipeline.addLast("encoder", new ServiceMessageOutEncoder());
                          pipeline.addLast(new ClientChannelManager());
                          pipeline.addLast(new ServiceMessageChannelHandler(serviceRegistry));
                      }
@@ -143,6 +141,15 @@ public class ClientChannel implements IChannelWriter, Closeable {
         throw new ServiceInvocationException("Unable to connect to server");
     }
 
+    public <T extends IService> ClientChannel bindService(Class<T> serviceType, T serviceImpl) {
+        serviceRegistry.addService(serviceType, serviceImpl);
+        return this;
+    }
+
+    public <T extends IService> T getRemoteService(Class<T> serviceType) {
+        return ServiceStubFactory.create(this, serviceType);
+    }
+
     class ClientChannelManager extends ChannelInboundHandlerAdapter {
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
@@ -154,14 +161,5 @@ public class ClientChannel implements IChannelWriter, Closeable {
             ClientChannel.this.channel.getAndSet(null);
             super.channelInactive(ctx);
         }
-    }
-
-    public <T extends IService> ClientChannel bindService(Class<T> serviceType, T serviceImpl) {
-        serviceRegistry.addService(serviceType, serviceImpl);
-        return this;
-    }
-
-    public <T extends IService> T getRemoteService(Class<T> serviceType) {
-        return ServiceStubFactory.create(this, serviceType);
     }
 }

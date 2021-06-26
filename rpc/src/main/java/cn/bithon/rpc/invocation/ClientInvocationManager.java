@@ -4,16 +4,18 @@ import cn.bithon.rpc.Oneway;
 import cn.bithon.rpc.channel.IChannelWriter;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import cn.bithon.rpc.exception.TimeoutException;
-import cn.bithon.rpc.message.ServiceRequestMessage;
-import cn.bithon.rpc.message.ServiceResponseMessage;
+import cn.bithon.rpc.message.in.ServiceResponseMessageIn;
+import cn.bithon.rpc.message.out.ServiceRequestMessageOut;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.netty.channel.Channel;
+import io.netty.util.internal.StringUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -29,41 +31,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ClientInvocationManager {
 
     private static final ClientInvocationManager INSTANCE = new ClientInvocationManager();
+    private final AtomicLong transactionId = new AtomicLong(21515);
+    private final ObjectMapper om = new JsonMapper();
+    private final Map<Long, InflightRequest> inflightRequests = new ConcurrentHashMap<>();
 
     public static ClientInvocationManager getInstance() {
         return INSTANCE;
     }
-
-    @Data
-    static class InflightRequest {
-        private CharSequence serviceName;
-        private CharSequence methodName;
-        long requestAt;
-        long responseAt;
-        Class<?> returnObjType;
-        Object response;
-        /**
-         * indicate whether this request has response.
-         * This is required so that {@link #response} might be null
-         */
-        boolean returned;
-        CharSequence exception;
-    }
-
-    static class MethodMeta {
-        boolean isOneway;
-        Class<?> returnType;
-
-        public MethodMeta(Method method) {
-            this.isOneway = method.getAnnotation(Oneway.class) != null;
-            this.returnType = method.getReturnType();
-        }
-    }
-
-    private final AtomicLong transactionId = new AtomicLong(21515);
-    private final ObjectMapper om = new JsonMapper();
-    private final Map<Method, MethodMeta> methodMetadata = new ConcurrentHashMap<>();
-    private final Map<Long, InflightRequest> inflightRequests = new ConcurrentHashMap<>();
 
     public Object invoke(IChannelWriter channelWriter, boolean debug, long timeout, Method method, Object[] args) {
         //
@@ -91,22 +65,23 @@ public class ClientInvocationManager {
                                                  method.getName());
         }
 
-        ServiceRequestMessage serviceRequest = ServiceRequestMessage.builder()
-                                                                    .serviceName(method.getDeclaringClass()
-                                                                                       .getSimpleName())
-                                                                    .methodName(method.getName())
-                                                                    .transactionId(transactionId.incrementAndGet())
-                                                                    .args(args)
-                                                                    .build();
+        // TODO: cache method.toString()
+        ServiceRequestMessageOut serviceRequest = ServiceRequestMessageOut.builder()
+                                                                          .serviceName(method.getDeclaringClass()
+                                                                                             .getSimpleName())
+                                                                          .methodName(method.toString())
+                                                                          .transactionId(transactionId.incrementAndGet())
+                                                                          .args(args)
+                                                                          .build();
 
-        MethodMeta meta = methodMetadata.computeIfAbsent(method, MethodMeta::new);
+        boolean isOneway = method.getAnnotation(Oneway.class) != null;
         InflightRequest inflightRequest = null;
-        if (!meta.isOneway) {
+        if (!isOneway) {
             inflightRequest = new InflightRequest();
             inflightRequest.requestAt = System.currentTimeMillis();
             inflightRequest.methodName = serviceRequest.getMethodName();
             inflightRequest.serviceName = serviceRequest.getServiceName();
-            inflightRequest.returnObjType = meta.returnType;
+            inflightRequest.returnObjType = method.getGenericReturnType();
             this.inflightRequests.put(serviceRequest.getTransactionId(), inflightRequest);
         }
         if (debug) {
@@ -128,7 +103,7 @@ public class ClientInvocationManager {
             //make sure it has been cleared when timeout
             inflightRequests.remove(serviceRequest.getTransactionId());
 
-            if (inflightRequest.exception != null) {
+            if (!StringUtil.isNullOrEmpty(inflightRequest.exception)) {
                 throw new ServiceInvocationException(inflightRequest.exception);
             }
 
@@ -143,19 +118,17 @@ public class ClientInvocationManager {
         return null;
     }
 
-    public void onResponse(ServiceResponseMessage response) {
+    public void onResponse(ServiceResponseMessageIn response) {
         long txId = response.getTransactionId();
         InflightRequest inflightRequest = inflightRequests.remove(txId);
         if (inflightRequest == null) {
             return;
         }
 
-        if (response.getReturning() != null) {
-            try {
-                inflightRequest.response = om.readValue(response.getReturning(), inflightRequest.returnObjType);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            inflightRequest.response = response.getReturning(inflightRequest.returnObjType);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         inflightRequest.exception = response.getException();
@@ -165,5 +138,21 @@ public class ClientInvocationManager {
             inflightRequest.returned = true;
             inflightRequest.notify();
         }
+    }
+
+    @Data
+    static class InflightRequest {
+        long requestAt;
+        long responseAt;
+        Type returnObjType;
+        Object response;
+        /**
+         * indicate whether this request has response.
+         * This is required so that {@link #response} might be null
+         */
+        boolean returned;
+        String exception;
+        private String serviceName;
+        private String methodName;
     }
 }

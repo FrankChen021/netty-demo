@@ -4,8 +4,8 @@ import cn.bithon.rpc.IService;
 import cn.bithon.rpc.ServiceRegistry;
 import cn.bithon.rpc.endpoint.EndPoint;
 import cn.bithon.rpc.invocation.ServiceStubFactory;
-import cn.bithon.rpc.message.ServiceMessageDecoder;
-import cn.bithon.rpc.message.ServiceMessageEncoder;
+import cn.bithon.rpc.message.in.ServiceMessageInDecoder;
+import cn.bithon.rpc.message.out.ServiceMessageOutEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -36,6 +36,7 @@ public class ServerChannel implements Closeable {
      * 服务端的请求直接在worker线程中处理，无需单独定义线程池
      */
     private final ServiceMessageChannelHandler channelReader = new ServiceMessageChannelHandler(serviceRegistry);
+    private final Map<EndPoint, ClientService> clientServices = new ConcurrentHashMap<>();
 
     public <T extends IService> ServerChannel bindService(Class<T> interfaceClass, T impl) {
         serviceRegistry.addService(interfaceClass, impl);
@@ -63,8 +64,8 @@ public class ServerChannel implements Closeable {
                     ChannelPipeline pipeline = ch.pipeline();
                     pipeline.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(16384, 0, 4, 0, 4));
                     pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
-                    pipeline.addLast("decoder", new ServiceMessageDecoder());
-                    pipeline.addLast("encoder", new ServiceMessageEncoder());
+                    pipeline.addLast("decoder", new ServiceMessageInDecoder());
+                    pipeline.addLast("encoder", new ServiceMessageOutEncoder());
                     pipeline.addLast(channelReader);
                     pipeline.addLast(new ClientServiceManager());
                 }
@@ -97,36 +98,8 @@ public class ServerChannel implements Closeable {
         }
     }
 
-    static class ClientService {
-        public ClientService(Channel channel) {
-            this.channel = channel;
-        }
-
-        private final Channel channel;
-        private final Map<Class<? extends IService>, IService> services = new ConcurrentHashMap<>();
-    }
-
-    private final Map<EndPoint, ClientService> clientServices = new ConcurrentHashMap<>();
-
     public Set<EndPoint> getClientEndpoints() {
         return clientServices.keySet();
-    }
-
-    class ClientServiceManager extends ChannelInboundHandlerAdapter {
-        @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            InetSocketAddress socketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-            clientServices.computeIfAbsent(EndPoint.of(socketAddress),
-                                           key -> new ClientService(ctx.channel()));
-            super.channelActive(ctx);
-        }
-
-        @Override
-        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            InetSocketAddress socketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-            clientServices.remove(EndPoint.of(socketAddress));
-            super.channelInactive(ctx);
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -154,5 +127,31 @@ public class ServerChannel implements Closeable {
                                                                                                }
                                                                                            },
                                                                                            serviceClass));
+    }
+
+    static class ClientService {
+        private final Channel channel;
+        private final Map<Class<? extends IService>, IService> services = new ConcurrentHashMap<>();
+
+        public ClientService(Channel channel) {
+            this.channel = channel;
+        }
+    }
+
+    class ClientServiceManager extends ChannelInboundHandlerAdapter {
+        @Override
+        public void channelActive(ChannelHandlerContext ctx) throws Exception {
+            InetSocketAddress socketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+            clientServices.computeIfAbsent(EndPoint.of(socketAddress),
+                                           key -> new ClientService(ctx.channel()));
+            super.channelActive(ctx);
+        }
+
+        @Override
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+            InetSocketAddress socketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
+            clientServices.remove(EndPoint.of(socketAddress));
+            super.channelInactive(ctx);
+        }
     }
 }

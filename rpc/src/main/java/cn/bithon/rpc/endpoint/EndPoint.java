@@ -12,6 +12,10 @@ public class EndPoint {
         this.port = port;
     }
 
+    public static EndPoint of(InetSocketAddress addr) {
+        return new EndPoint(addr.getHostString(), addr.getPort());
+    }
+
     public String getHost() {
         return host;
     }
@@ -35,9 +39,5 @@ public class EndPoint {
     @Override
     public int hashCode() {
         return Objects.hash(host, port);
-    }
-
-    public static EndPoint of(InetSocketAddress addr) {
-        return new EndPoint(addr.getHostString(), addr.getPort());
     }
 }
