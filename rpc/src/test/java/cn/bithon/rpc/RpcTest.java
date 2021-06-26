@@ -5,6 +5,7 @@ import cn.bithon.rpc.channel.ServerChannel;
 import cn.bithon.rpc.endpoint.EndPoint;
 import cn.bithon.rpc.example.ExampleServiceImpl;
 import cn.bithon.rpc.example.IExampleService;
+import cn.bithon.rpc.example.WebRequestMetrics;
 import cn.bithon.rpc.exception.ServiceInvocationException;
 import com.google.common.collect.ImmutableMap;
 import org.junit.AfterClass;
@@ -74,6 +75,16 @@ public class RpcTest {
 
             // test null
             Assert.assertNull(example.merge(null, null));
+        }
+    }
+
+    @Test
+    public void testSendMessageLite() {
+        try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
+            IExampleService example = ch.getRemoteService(IExampleService.class);
+
+            Assert.assertEquals("/1", example.send(WebRequestMetrics.newBuilder().setUri("/1").build()));
+            Assert.assertEquals("/2", example.send(WebRequestMetrics.newBuilder().setUri("/2").build()));
         }
     }
 

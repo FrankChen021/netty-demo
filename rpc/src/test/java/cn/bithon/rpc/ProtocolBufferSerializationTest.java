@@ -1,5 +1,6 @@
 package cn.bithon.rpc;
 
+import cn.bithon.rpc.example.WebRequestMetrics;
 import cn.bithon.rpc.message.serializer.ProtocolBufferSerializer;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;

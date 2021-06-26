@@ -55,4 +55,10 @@ public class ExampleServiceImpl implements IExampleService {
         }
         return a;
     }
+
+    @Override
+    public String send(WebRequestMetrics metrics) {
+        System.out.printf("Receiving metrics: %s\n", metrics);
+        return metrics.getUri();
+    }
 }

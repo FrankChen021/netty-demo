@@ -36,4 +36,6 @@ public interface IExampleService extends IService {
      * test composite type
      */
     Map<String, String> merge(Map<String, String> a, Map<String, String> b);
+
+    String send(WebRequestMetrics metrics);
 }
