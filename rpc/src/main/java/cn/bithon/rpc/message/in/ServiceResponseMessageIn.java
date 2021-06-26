@@ -23,7 +23,11 @@ public class ServiceResponseMessageIn extends ServiceMessageIn {
         this.transactionId = in.readInt64();
 
         this.serverResponseAt = in.readInt64();
-        this.exception = in.readString();
+
+        boolean hasException = in.readRawByte() == 1;
+        if (hasException) {
+            this.exception = in.readString();
+        }
 
         boolean hasReturning = in.readRawByte() == 1;
         if (hasReturning) {

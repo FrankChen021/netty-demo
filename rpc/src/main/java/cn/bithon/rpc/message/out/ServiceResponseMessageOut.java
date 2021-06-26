@@ -27,7 +27,14 @@ public class ServiceResponseMessageOut extends ServiceMessageOut {
         out.writeInt64NoTag(this.getTransactionId());
 
         out.writeInt64NoTag(serverResponseAt);
-        out.writeStringNoTag(this.exception == null ? "" : this.exception);
+
+        if (this.exception == null) {
+            out.writeRawByte(0);
+        } else {
+            out.writeRawByte(1);
+            out.writeStringNoTag(this.exception);
+        }
+
         if (this.returning == null) {
             out.writeRawByte(0);
         } else {
