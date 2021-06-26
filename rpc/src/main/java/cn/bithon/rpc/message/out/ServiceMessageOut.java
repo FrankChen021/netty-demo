@@ -1,6 +1,7 @@
 package cn.bithon.rpc.message.out;
 
 import cn.bithon.rpc.message.ServiceMessage;
+import com.google.protobuf.CodedOutputStream;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
@@ -8,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 
 abstract public class ServiceMessageOut extends ServiceMessage {
 
-    abstract public void encode(ByteBuf out) throws IOException;
+    abstract public void encode(CodedOutputStream out) throws IOException;
 
     protected void writeString(CharSequence val, ByteBuf out) {
         if (val == null) {

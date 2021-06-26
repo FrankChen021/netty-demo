@@ -8,6 +8,7 @@ import cn.bithon.rpc.message.out.ServiceResponseMessageOut;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.Channel;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 public class ServiceInvocationRunnable implements Runnable {
@@ -53,10 +54,10 @@ public class ServiceInvocationRunnable implements Runnable {
                                               serviceRequest.getMethodName());
             }
 
-            Object[] inputArgs = serviceRequest.getArgs(serviceProvider.getParameterTypes());
 
             Object ret;
             try {
+                Object[] inputArgs = serviceRequest.getArgs(serviceProvider.getParameterTypes());
                 ret = serviceProvider.invoke(inputArgs);
             } catch (IllegalArgumentException e) {
                 throw new BadRequestException("Bad Request: Service[%s#%s] exception: Illegal argument",
@@ -72,6 +73,11 @@ public class ServiceInvocationRunnable implements Runnable {
                                                      serviceRequest.getServiceName(),
                                                      serviceRequest.getMethodName(),
                                                      e.getTargetException().toString());
+            } catch (IOException e) {
+                throw new BadRequestException("Bad Request: Service[%s#%s]: %s",
+                                              serviceRequest.getServiceName(),
+                                              serviceRequest.getMethodName(),
+                                              e.getMessage());
             }
 
             if (!serviceProvider.isOneway()) {

@@ -60,6 +60,17 @@ public class RpcTest {
     }
 
     @Test
+    public void testNull() {
+        try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
+            IExampleService example = ch.getRemoteService(IExampleService.class);
+
+            // test map
+            Assert.assertEquals(ImmutableMap.of("k1", "v1"),
+                                example.merge(ImmutableMap.of("k1", "v1"), null));
+        }
+    }
+
+    @Test
     public void testInvocationException() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
             IExampleService calculator = ch.getRemoteService(IExampleService.class);

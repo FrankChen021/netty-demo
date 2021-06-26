@@ -3,15 +3,15 @@ package cn.bithon.rpc.message.in;
 import cn.bithon.rpc.message.ServiceMessage;
 import cn.bithon.rpc.message.ServiceMessageType;
 import cn.bithon.rpc.message.serializer.SerializerFactory;
-import io.netty.buffer.ByteBuf;
+import com.google.protobuf.CodedInputStream;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
 
 public class ServiceResponseMessageIn extends ServiceMessageIn {
     private long serverResponseAt;
-    private ByteBuf returning;
-    private CharSequence exception;
+    private CodedInputStream returning;
+    private String exception;
 
     @Override
     public int getMessageType() {
@@ -19,13 +19,13 @@ public class ServiceResponseMessageIn extends ServiceMessageIn {
     }
 
     @Override
-    public ServiceMessage decode(ByteBuf in) {
-        this.transactionId = in.readLong();
+    public ServiceMessage decode(CodedInputStream in) throws IOException {
+        this.transactionId = in.readInt64();
 
-        this.serverResponseAt = in.readLong();
-        this.exception = readString(in);
+        this.serverResponseAt = in.readInt64();
+        this.exception = in.readString();
 
-        boolean hasReturning = in.readByte() == 1;
+        boolean hasReturning = in.readRawByte() == 1;
         if (hasReturning) {
             this.returning = in;
         }
@@ -38,14 +38,14 @@ public class ServiceResponseMessageIn extends ServiceMessageIn {
 
     public Object getReturning(Type type) throws IOException {
         if (returning != null) {
-            int serializer = this.returning.readInt();
+            int serializer = this.returning.readInt32();
             return SerializerFactory.getSerializer(serializer)
                                     .deserialize(this.returning, type);
         }
         return null;
     }
 
-    public CharSequence getException() {
+    public String getException() {
         return exception;
     }
 }

@@ -4,22 +4,21 @@ import cn.bithon.rpc.message.ServiceMessageType;
 import cn.bithon.rpc.message.serializer.BinarySerializer;
 import cn.bithon.rpc.message.serializer.ISerializer;
 import cn.bithon.rpc.message.serializer.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.CodedOutputStream;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufOutputStream;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 public class ServiceRequestMessageOut extends ServiceMessageOut {
 
-    private CharSequence serviceName;
-    private CharSequence methodName;
+    private String serviceName;
+    private String methodName;
 
-    public CharSequence getServiceName() {
+    public String getServiceName() {
         return serviceName;
     }
-    public CharSequence getMethodName() {
+
+    public String getMethodName() {
         return methodName;
     }
 
@@ -38,16 +37,19 @@ public class ServiceRequestMessageOut extends ServiceMessageOut {
     }
 
     @Override
-    public void encode(ByteBuf out) throws IOException {
-        out.writeInt(this.getMessageType());
-        out.writeLong(this.getTransactionId());
+    public void encode(CodedOutputStream out) throws IOException {
+        out.writeInt32NoTag(this.getMessageType());
+        out.writeInt64NoTag(this.getTransactionId());
 
-        writeString(this.serviceName, out);
-        writeString(this.methodName, out);
+        out.writeStringNoTag(this.serviceName);
+        out.writeStringNoTag(this.methodName);
 
         ISerializer serializer = BinarySerializer.INSTANCE;
-        out.writeInt(serializer.getType());
-        serializer.serialize(out, this.args);
+        out.writeInt32NoTag(serializer.getType());
+        out.writeInt32NoTag(this.args.length);
+        for (Object arg : this.args) {
+            serializer.serialize(out, arg);
+        }
     }
 
     public static class Builder {

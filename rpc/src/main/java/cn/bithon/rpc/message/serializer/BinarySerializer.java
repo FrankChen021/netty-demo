@@ -19,32 +19,12 @@ public class BinarySerializer implements ISerializer {
     }
 
     @Override
-    public void serialize(ByteBuf buf, Object obj) throws IOException {
-        serializer.serialize(obj, CodedOutputStream.newInstance(new ByteBufOutputStream(buf)));
+    public void serialize(CodedOutputStream os, Object obj) throws IOException {
+        serializer.serialize(obj, os);
     }
 
     @Override
-    public Object deserialize(ByteBuf buf, Type type) throws IOException {
-        return serializer.deserialize(CodedInputStream.newInstance(new ByteBufInputStream(buf)), type);
-    }
-
-    @Override
-    public void serialize(ByteBuf buf, Object[] args) throws IOException {
-        CodedOutputStream is = CodedOutputStream.newInstance(new ByteBufOutputStream(buf));
-        is.writeInt32NoTag(args.length);
-        for (Object arg : args) {
-            serializer.serialize(arg, is);
-        }
-    }
-
-    @Override
-    public Object[] deserialize(ByteBuf buf, Type[] types) throws IOException {
-        CodedInputStream is = CodedInputStream.newInstance(new ByteBufInputStream(buf));
-        int size = is.readInt32();
-        Object[] args = new Object[size];
-        for (int i = 0; i < size; i++) {
-            args[i] = serializer.deserialize(is, types[i]);
-        }
-        return args;
+    public Object deserialize(CodedInputStream is, Type type) throws IOException {
+        return serializer.deserialize(is, type);
     }
 }

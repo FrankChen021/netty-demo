@@ -1,13 +1,15 @@
 package cn.bithon.rpc.message.in;
 
 import cn.bithon.rpc.message.ServiceMessage;
+import com.google.protobuf.CodedInputStream;
 import io.netty.buffer.ByteBuf;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 abstract public class ServiceMessageIn extends ServiceMessage {
 
-    abstract public ServiceMessage decode(ByteBuf in);
+    abstract public ServiceMessage decode(CodedInputStream in) throws IOException;
 
     protected CharSequence readString(ByteBuf in) {
         int len = in.readInt();

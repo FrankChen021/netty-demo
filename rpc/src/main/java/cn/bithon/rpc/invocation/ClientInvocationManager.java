@@ -9,6 +9,7 @@ import cn.bithon.rpc.message.out.ServiceRequestMessageOut;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.netty.channel.Channel;
+import io.netty.util.internal.StringUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -102,7 +103,7 @@ public class ClientInvocationManager {
             //make sure it has been cleared when timeout
             inflightRequests.remove(serviceRequest.getTransactionId());
 
-            if (inflightRequest.exception != null) {
+            if (!StringUtil.isNullOrEmpty(inflightRequest.exception)) {
                 throw new ServiceInvocationException(inflightRequest.exception);
             }
 
@@ -150,8 +151,8 @@ public class ClientInvocationManager {
          * This is required so that {@link #response} might be null
          */
         boolean returned;
-        CharSequence exception;
-        private CharSequence serviceName;
-        private CharSequence methodName;
+        String exception;
+        private String serviceName;
+        private String methodName;
     }
 }
