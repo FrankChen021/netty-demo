@@ -64,9 +64,18 @@ public class RpcTest {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
             IExampleService example = ch.getRemoteService(IExampleService.class);
 
-            // test map
+            // test null
             Assert.assertEquals(ImmutableMap.of("k1", "v1"),
                                 example.merge(ImmutableMap.of("k1", "v1"), null));
+
+            // test null
+            Assert.assertEquals(ImmutableMap.of("k2", "v2"),
+                                example.merge(null, ImmutableMap.of("k2", "v2")));
+
+            // test null
+            Assert.assertEquals(null,
+                                example.merge(null, null));
+
         }
     }
 

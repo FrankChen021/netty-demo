@@ -2,9 +2,6 @@ package cn.bithon.rpc.message.serializer;
 
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -20,11 +17,20 @@ public class BinarySerializer implements ISerializer {
 
     @Override
     public void serialize(CodedOutputStream os, Object obj) throws IOException {
-        serializer.serialize(obj, os);
+        if (obj != null) {
+            os.writeRawByte(1);
+            serializer.serialize(obj, os);
+        } else {
+            os.writeRawByte(0);
+        }
     }
 
     @Override
     public Object deserialize(CodedInputStream is, Type type) throws IOException {
-        return serializer.deserialize(is, type);
+        if (is.readRawByte() == 1) {
+            return serializer.deserialize(is, type);
+        } else {
+            return null;
+        }
     }
 }

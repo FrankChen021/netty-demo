@@ -46,8 +46,12 @@ public class ExampleServiceImpl implements IExampleService {
 
     @Override
     public Map<String, String> merge(Map<String, String> a, Map<String, String> b) {
-        if ( b != null ) {
-            b.forEach(a::put);
+        if (b != null) {
+            if (a != null) {
+                b.forEach(a::put);
+            } else {
+                return b;
+            }
         }
         return a;
     }
