@@ -35,7 +35,7 @@ public class RpcTest {
     }
 
     @Test
-    public void test() throws Exception {
+    public void test() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
             IExampleService example = ch.getRemoteService(IExampleService.class);
             IServiceController invoker = (IServiceController) example;
@@ -73,9 +73,7 @@ public class RpcTest {
                                 example.merge(null, ImmutableMap.of("k2", "v2")));
 
             // test null
-            Assert.assertEquals(null,
-                                example.merge(null, null));
-
+            Assert.assertNull(example.merge(null, null));
         }
     }
 
