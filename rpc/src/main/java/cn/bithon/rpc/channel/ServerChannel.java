@@ -132,6 +132,7 @@ public class ServerChannel implements Closeable {
     static class ClientService {
         private final Channel channel;
         private final Map<Class<? extends IService>, IService> services = new ConcurrentHashMap<>();
+
         public ClientService(Channel channel) {
             this.channel = channel;
         }

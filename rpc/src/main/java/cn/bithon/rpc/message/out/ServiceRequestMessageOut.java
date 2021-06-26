@@ -3,9 +3,7 @@ package cn.bithon.rpc.message.out;
 import cn.bithon.rpc.message.ServiceMessageType;
 import cn.bithon.rpc.message.serializer.BinarySerializer;
 import cn.bithon.rpc.message.serializer.ISerializer;
-import cn.bithon.rpc.message.serializer.JsonSerializer;
 import com.google.protobuf.CodedOutputStream;
-import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
 
