@@ -12,11 +12,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 @ChannelHandler.Sharable
 public class ServiceMessageChannelHandler extends ChannelInboundHandlerAdapter {
+    private final static Logger log = LoggerFactory.getLogger(ServiceMessageChannelHandler.class);
 
     private final IServiceInvocationExecutor invoker;
     private final ServiceRegistry serviceRegistry;

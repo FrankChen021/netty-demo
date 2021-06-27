@@ -22,7 +22,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.util.concurrent.Future;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.time.Duration;
@@ -32,8 +33,8 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Should only be used at the client side
  */
-@Slf4j
 public class ClientChannel implements IChannelWriter, Closeable {
+    private final static Logger log = LoggerFactory.getLogger(ClientChannel.class);
 
     //
     // channel

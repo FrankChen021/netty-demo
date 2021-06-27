@@ -10,8 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.netty.channel.Channel;
 import io.netty.util.internal.StringUtil;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -27,8 +27,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * It could be a network client, which connects to a RPC server,
  * it could also be a RPC server which calls service provided by a network client
  */
-@Slf4j
 public class ClientInvocationManager {
+    private final static Logger log = LoggerFactory.getLogger(ClientInvocationManager.class);
 
     private static final ClientInvocationManager INSTANCE = new ClientInvocationManager();
     private final AtomicLong transactionId = new AtomicLong(21515);
@@ -140,7 +140,6 @@ public class ClientInvocationManager {
         }
     }
 
-    @Data
     static class InflightRequest {
         long requestAt;
         long responseAt;

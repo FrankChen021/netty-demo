@@ -1,6 +1,7 @@
 package cn.bithon.rpc;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -8,8 +9,9 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Slf4j
 public class ServiceRegistry {
+
+    private final static Logger log = LoggerFactory.getLogger(ServiceRegistry.class);
 
     private final Map<String, RegistryItem> registry = new ConcurrentHashMap<>();
 

@@ -5,12 +5,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-@Slf4j
 public class ServiceMessageOutEncoder extends MessageToByteEncoder<ServiceMessageOut> {
+    private final static Logger log = LoggerFactory.getLogger(ServiceMessageOutEncoder.class);
 
     @Override
     protected void encode(ChannelHandlerContext ctx, ServiceMessageOut msg, ByteBuf out) {
