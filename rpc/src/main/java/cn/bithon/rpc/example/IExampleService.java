@@ -38,4 +38,11 @@ public interface IExampleService extends IService {
     Map<String, String> merge(Map<String, String> a, Map<String, String> b);
 
     String send(WebRequestMetrics metrics);
+
+    /**
+     * test multiple protobuf messages
+     */
+    String send(WebRequestMetrics metrics1, WebRequestMetrics metrics2);
+    String send(String uri, WebRequestMetrics metrics);
+    String send(WebRequestMetrics metrics, String uri);
 }

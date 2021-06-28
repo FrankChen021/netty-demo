@@ -55,8 +55,10 @@ public class RpcTest {
             Assert.assertEquals(Arrays.asList("1", "3"), example.delete(Arrays.asList("1", "2", "3"), 1));
 
             // test map
-            Assert.assertEquals(ImmutableMap.of("k1", "v1", "k2", "v2"),
-                                example.merge(ImmutableMap.of("k1", "v1"), ImmutableMap.of("k2", "v2")));
+            Assert.assertEquals(
+                ImmutableMap.of("k1", "v1", "k2", "v2"),
+                example.merge(ImmutableMap.of("k1", "v1"), ImmutableMap.of("k2", "v2"))
+            );
         }
     }
 
@@ -66,12 +68,16 @@ public class RpcTest {
             IExampleService example = ch.getRemoteService(IExampleService.class);
 
             // test null
-            Assert.assertEquals(ImmutableMap.of("k1", "v1"),
-                                example.merge(ImmutableMap.of("k1", "v1"), null));
+            Assert.assertEquals(
+                ImmutableMap.of("k1", "v1"),
+                example.merge(ImmutableMap.of("k1", "v1"), null)
+            );
 
             // test null
-            Assert.assertEquals(ImmutableMap.of("k2", "v2"),
-                                example.merge(null, ImmutableMap.of("k2", "v2")));
+            Assert.assertEquals(
+                ImmutableMap.of("k2", "v2"),
+                example.merge(null, ImmutableMap.of("k2", "v2"))
+            );
 
             // test null
             Assert.assertNull(example.merge(null, null));
@@ -85,6 +91,28 @@ public class RpcTest {
 
             Assert.assertEquals("/1", example.send(WebRequestMetrics.newBuilder().setUri("/1").build()));
             Assert.assertEquals("/2", example.send(WebRequestMetrics.newBuilder().setUri("/2").build()));
+        }
+    }
+
+    @Test
+    public void testMultipleSendMessageLite() {
+        try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
+            IExampleService example = ch.getRemoteService(IExampleService.class);
+
+            Assert.assertEquals("/1-/2", example.send(
+                WebRequestMetrics.newBuilder().setUri("/1").build(),
+                WebRequestMetrics.newBuilder().setUri("/2").build()
+            ));
+
+          Assert.assertEquals("/2-/3", example.send(
+              "/2",
+              WebRequestMetrics.newBuilder().setUri("/3").build()
+          ));
+
+          Assert.assertEquals("/4-/5", example.send(
+              WebRequestMetrics.newBuilder().setUri("/4").build(),
+              "/5"
+          ));
         }
     }
 
