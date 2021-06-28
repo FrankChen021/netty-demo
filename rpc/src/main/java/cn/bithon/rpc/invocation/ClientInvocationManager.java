@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * it could also be a RPC server which calls service provided by a network client
  */
 public class ClientInvocationManager {
-    private final static Logger log = LoggerFactory.getLogger(ClientInvocationManager.class);
+    private static final Logger log = LoggerFactory.getLogger(ClientInvocationManager.class);
 
     private static final ClientInvocationManager INSTANCE = new ClientInvocationManager();
     private final AtomicLong transactionId = new AtomicLong(21515);

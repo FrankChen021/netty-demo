@@ -154,47 +154,47 @@ public class ProtocolBufferSerializer {
 
         public static final ObjectSerializer INSTANCE = new ObjectSerializer();
 
-        private static final Map<Type, IObjectSerializer> serializers = new HashMap<>();
+        private static final Map<Type, IObjectSerializer> SERIALIZER = new HashMap<>();
 
         static {
-            serializers.put(boolean.class, BooleanSerializer.INSTANCE);
-            serializers.put(Boolean.class, BooleanSerializer.INSTANCE);
+            SERIALIZER.put(boolean.class, BooleanSerializer.INSTANCE);
+            SERIALIZER.put(Boolean.class, BooleanSerializer.INSTANCE);
 
-            serializers.put(char.class, CharSerializer.INSTANCE);
-            serializers.put(Character.class, CharSerializer.INSTANCE);
+            SERIALIZER.put(char.class, CharSerializer.INSTANCE);
+            SERIALIZER.put(Character.class, CharSerializer.INSTANCE);
 
-            serializers.put(byte.class, ByteSerializer.INSTANCE);
-            serializers.put(Byte.class, ByteSerializer.INSTANCE);
+            SERIALIZER.put(byte.class, ByteSerializer.INSTANCE);
+            SERIALIZER.put(Byte.class, ByteSerializer.INSTANCE);
 
-            serializers.put(short.class, ShortSerializer.INSTANCE);
-            serializers.put(Short.class, ShortSerializer.INSTANCE);
+            SERIALIZER.put(short.class, ShortSerializer.INSTANCE);
+            SERIALIZER.put(Short.class, ShortSerializer.INSTANCE);
 
-            serializers.put(int.class, IntegerSerializer.INSTANCE);
-            serializers.put(Integer.class, IntegerSerializer.INSTANCE);
+            SERIALIZER.put(int.class, IntegerSerializer.INSTANCE);
+            SERIALIZER.put(Integer.class, IntegerSerializer.INSTANCE);
 
-            serializers.put(float.class, FloatSerializer.INSTANCE);
-            serializers.put(Float.class, FloatSerializer.INSTANCE);
+            SERIALIZER.put(float.class, FloatSerializer.INSTANCE);
+            SERIALIZER.put(Float.class, FloatSerializer.INSTANCE);
 
-            serializers.put(double.class, DoubleSerializer.INSTANCE);
-            serializers.put(Double.class, DoubleSerializer.INSTANCE);
+            SERIALIZER.put(double.class, DoubleSerializer.INSTANCE);
+            SERIALIZER.put(Double.class, DoubleSerializer.INSTANCE);
 
-            serializers.put(long.class, LongSerializer.INSTANCE);
-            serializers.put(Long.class, LongSerializer.INSTANCE);
+            SERIALIZER.put(long.class, LongSerializer.INSTANCE);
+            SERIALIZER.put(Long.class, LongSerializer.INSTANCE);
 
-            serializers.put(char[].class, new CharArraySerializer());
-            serializers.put(byte[].class, new ByteArraySerializer());
-            serializers.put(short[].class, new ShortArraySerializer());
-            serializers.put(int[].class, new IntegerArraySerializer());
-            serializers.put(long[].class, new LongArraySerializer());
-            serializers.put(float[].class, new FloatArraySerializer());
-            serializers.put(double[].class, new DoubleArraySerializer());
+            SERIALIZER.put(char[].class, new CharArraySerializer());
+            SERIALIZER.put(byte[].class, new ByteArraySerializer());
+            SERIALIZER.put(short[].class, new ShortArraySerializer());
+            SERIALIZER.put(int[].class, new IntegerArraySerializer());
+            SERIALIZER.put(long[].class, new LongArraySerializer());
+            SERIALIZER.put(float[].class, new FloatArraySerializer());
+            SERIALIZER.put(double[].class, new DoubleArraySerializer());
 
-            serializers.put(String.class, new StringSerializer());
+            SERIALIZER.put(String.class, new StringSerializer());
         }
 
         @Override
         public void serialize(Object obj, CodedOutputStream os) throws IOException {
-            IObjectSerializer serializer = serializers.get(obj.getClass());
+            IObjectSerializer serializer = SERIALIZER.get(obj.getClass());
             if (serializer != null) {
                 serializer.serialize(obj, os);
                 return;
@@ -215,7 +215,7 @@ public class ProtocolBufferSerializer {
 
         @Override
         public Object deserialize(Type type, CodedInputStream is) throws IOException {
-            IObjectSerializer serializer = serializers.get(type);
+            IObjectSerializer serializer = SERIALIZER.get(type);
             if (serializer != null) {
                 return serializer.deserialize(type, is);
             }

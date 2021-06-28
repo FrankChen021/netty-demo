@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Should only be used at the client side
  */
 public class ClientChannel implements IChannelWriter, Closeable {
-    private final static Logger log = LoggerFactory.getLogger(ClientChannel.class);
+    private static final Logger log = LoggerFactory.getLogger(ClientChannel.class);
 
     //
     // channel
@@ -92,7 +92,7 @@ public class ClientChannel implements IChannelWriter, Closeable {
     }
 
     @Override
-    synchronized public void connect() {
+    public synchronized void connect() {
         if (bossGroup == null) {
             throw new IllegalStateException("client channel has been shutdown");
         }

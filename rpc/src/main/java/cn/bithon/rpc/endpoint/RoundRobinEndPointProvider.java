@@ -1,5 +1,6 @@
 package cn.bithon.rpc.endpoint;
 
+import java.util.Collection;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RoundRobinEndPointProvider implements IEndPointProvider {
@@ -12,6 +13,9 @@ public class RoundRobinEndPointProvider implements IEndPointProvider {
         index = ThreadLocalRandom.current().nextInt(endpoints.length);
     }
 
+    public RoundRobinEndPointProvider(Collection<EndPoint> endpoints) {
+        this(endpoints.toArray(new EndPoint[0]));
+    }
     @Override
     public EndPoint getEndpoint() {
         return endpoints[index++ % endpoints.length];

@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 public class ServiceMessageOutEncoder extends MessageToByteEncoder<ServiceMessageOut> {
-    private final static Logger log = LoggerFactory.getLogger(ServiceMessageOutEncoder.class);
+    private static final Logger log = LoggerFactory.getLogger(ServiceMessageOutEncoder.class);
 
     @Override
     protected void encode(ChannelHandlerContext ctx, ServiceMessageOut msg, ByteBuf out) {

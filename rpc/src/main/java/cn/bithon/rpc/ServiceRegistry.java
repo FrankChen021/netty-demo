@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ServiceRegistry {
 
-    private final static Logger log = LoggerFactory.getLogger(ServiceRegistry.class);
+    private static final Logger log = LoggerFactory.getLogger(ServiceRegistry.class);
 
     private final Map<String, RegistryItem> registry = new ConcurrentHashMap<>();
 

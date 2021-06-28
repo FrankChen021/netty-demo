@@ -46,7 +46,7 @@ public class ServiceResponseMessageOut extends ServiceMessageOut {
         }
     }
 
-    static public class Builder {
+    public static class Builder {
         ServiceResponseMessageOut response = new ServiceResponseMessageOut();
 
         public Builder serverResponseAt(long currentTimeMillis) {

@@ -7,9 +7,9 @@ import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-abstract public class ServiceMessageIn extends ServiceMessage {
+public abstract class ServiceMessageIn extends ServiceMessage {
 
-    abstract public ServiceMessage decode(CodedInputStream in) throws IOException;
+    public abstract ServiceMessage decode(CodedInputStream in) throws IOException;
 
     protected CharSequence readString(ByteBuf in) {
         int len = in.readInt();

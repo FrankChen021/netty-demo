@@ -12,12 +12,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.DecoderException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ChannelHandler.Sharable
 public class ServiceMessageChannelHandler extends ChannelInboundHandlerAdapter {
-    private final static Logger log = LoggerFactory.getLogger(ServiceMessageChannelHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ServiceMessageChannelHandler.class);
 
     private final IServiceInvocationExecutor invoker;
     private final ServiceRegistry serviceRegistry;
@@ -64,6 +65,14 @@ public class ServiceMessageChannelHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        if (cause instanceof DecoderException) {
+            if (cause.getCause() != null) {
+                log.warn(cause.getCause().getMessage());
+            } else {
+                log.warn("Decoder exception: {}", cause.getMessage());
+            }
+            return;
+        }
         log.error("Exception occurred when processing message", cause);
     }
 
