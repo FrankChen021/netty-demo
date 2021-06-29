@@ -8,7 +8,6 @@ import cn.bithon.rpc.message.ServiceMessage;
 import cn.bithon.rpc.message.ServiceMessageType;
 import cn.bithon.rpc.message.in.ServiceRequestMessageIn;
 import cn.bithon.rpc.message.in.ServiceResponseMessageIn;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -22,7 +21,6 @@ public class ServiceMessageChannelHandler extends ChannelInboundHandlerAdapter {
 
     private final IServiceInvocationExecutor invoker;
     private final ServiceRegistry serviceRegistry;
-    private final ObjectMapper om = new ObjectMapper();
     private boolean channelDebugEnabled;
 
     public ServiceMessageChannelHandler(ServiceRegistry serviceRegistry) {
@@ -50,8 +48,7 @@ public class ServiceMessageChannelHandler extends ChannelInboundHandlerAdapter {
                          request.getMethodName());
             }
 
-            invoker.invoke(new ServiceInvocationRunnable(om,
-                                                         serviceRegistry,
+            invoker.invoke(new ServiceInvocationRunnable(serviceRegistry,
                                                          ctx.channel(),
                                                          (ServiceRequestMessageIn) message));
         } else if (message.getMessageType() == ServiceMessageType.SERVER_RESPONSE) {
