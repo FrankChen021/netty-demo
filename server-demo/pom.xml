@@ -2,20 +2,27 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <groupId>com.sbss.bithon</groupId>
+    <artifactId>component-brpc</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.sbss.bithon</groupId>
-  <artifactId>component-brpc</artifactId>
-  <packaging>pom</packaging>
-  <version>1.0-SNAPSHOT</version>
-  <modules>
-    <module>brpc</module>
-    <module>server-demo</module>
-    <module>client-demo</module>
-  </modules>
+  <artifactId>server-demo</artifactId>
 
   <properties>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
   </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.sbss.bithon</groupId>
+      <artifactId>lib-brpc</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
+
 </project>
