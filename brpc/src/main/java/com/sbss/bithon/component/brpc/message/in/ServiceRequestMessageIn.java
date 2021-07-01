@@ -11,8 +11,8 @@ import java.lang.reflect.Type;
 
 public class ServiceRequestMessageIn extends ServiceMessageIn {
 
-    private CharSequence serviceName;
-    private CharSequence methodName;
+    private String serviceName;
+    private String methodName;
 
     /**
      * args
@@ -39,11 +39,11 @@ public class ServiceRequestMessageIn extends ServiceMessageIn {
         return this;
     }
 
-    public CharSequence getServiceName() {
+    public String getServiceName() {
         return serviceName;
     }
 
-    public CharSequence getMethodName() {
+    public String getMethodName() {
         return methodName;
     }
 

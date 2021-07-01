@@ -66,10 +66,11 @@ public class ClientInvocationManager {
         ServiceConfig serviceConfig = method.getAnnotation(ServiceConfig.class);
         boolean isOneway = serviceConfig != null && serviceConfig.isOneway();
         Serializer serializer = serviceConfig == null ? Serializer.BINARY : serviceConfig.serializer();
+        String name = serviceConfig != null && !StringUtil.isNullOrEmpty(serviceConfig.name()) ? serviceConfig.name() : method.toString();
         ServiceRequestMessageOut serviceRequest = ServiceRequestMessageOut.builder()
                                                                           .serviceName(method.getDeclaringClass()
                                                                                              .getSimpleName())
-                                                                          .methodName(method.toString())
+                                                                          .methodName(name)
                                                                           .transactionId(transactionId.incrementAndGet())
                                                                           .args(args)
                                                                           .serializer(serializer)

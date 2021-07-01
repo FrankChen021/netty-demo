@@ -16,7 +16,7 @@ public interface IExampleService extends IService {
     void block(int timeout);
 
     /**
-     * {@link Oneway} test
+     * Oneway test
      */
     @ServiceConfig(isOneway = true)
     void sendOneway(String msg);
@@ -44,9 +44,11 @@ public interface IExampleService extends IService {
      * test multiple protobuf messages
      */
     String send(WebRequestMetrics metrics1, WebRequestMetrics metrics2);
+
     String send(String uri, WebRequestMetrics metrics);
+
     String send(WebRequestMetrics metrics, String uri);
 
-    @ServiceConfig(serializer = Serializer.JSON)
+    @ServiceConfig(serializer = Serializer.JSON, name = "merge2")
     Map<String, String> mergeWithJson(Map<String, String> a, Map<String, String> b);
 }

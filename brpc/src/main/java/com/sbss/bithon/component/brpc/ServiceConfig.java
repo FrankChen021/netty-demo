@@ -7,9 +7,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * @author frankchen
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface ServiceConfig {
+    /**
+     * service name
+     */
+    String name() default "";
+
     boolean isOneway() default false;
 
     Serializer serializer() default Serializer.BINARY;

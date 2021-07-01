@@ -1,5 +1,6 @@
 package com.sbss.bithon.component.brpc;
 
+import io.netty.util.internal.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,15 +19,23 @@ public class ServiceRegistry {
     public <T extends IService> void addService(Class<T> serviceType, T serviceImpl) {
         // override methods are not supported
         for (Method method : serviceType.getDeclaredMethods()) {
-            String qualifiedName = method.toString();
-            RegistryItem item = registry.put(qualifiedName, new RegistryItem(method, serviceImpl));
+
+            ServiceConfig config = method.getAnnotation(ServiceConfig.class);
+            String name = null;
+            if (config != null && !StringUtil.isNullOrEmpty(config.name())) {
+                name = config.name();
+            } else {
+                //full qualified name
+                name = method.toString();
+            }
+            RegistryItem item = registry.put(name, new RegistryItem(method, serviceImpl));
             if (item != null) {
                 log.error("{} is overwritten", item.method);
             }
         }
     }
 
-    public RegistryItem findServiceProvider(CharSequence serviceName, CharSequence methodName) {
+    public RegistryItem findServiceProvider(CharSequence methodName) {
         return registry.get(methodName);
     }
 
