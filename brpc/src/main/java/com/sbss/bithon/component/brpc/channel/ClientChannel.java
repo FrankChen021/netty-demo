@@ -5,6 +5,7 @@ import com.sbss.bithon.component.brpc.ServiceRegistry;
 import com.sbss.bithon.component.brpc.endpoint.EndPoint;
 import com.sbss.bithon.component.brpc.endpoint.IEndPointProvider;
 import com.sbss.bithon.component.brpc.endpoint.SingleEndPointProvider;
+import com.sbss.bithon.component.brpc.exception.ServiceClientException;
 import com.sbss.bithon.component.brpc.exception.ServiceInvocationException;
 import com.sbss.bithon.component.brpc.invocation.ServiceStubFactory;
 import com.sbss.bithon.component.brpc.message.in.ServiceMessageInDecoder;
@@ -136,10 +137,10 @@ public class ClientChannel implements IChannelWriter, Closeable {
                     Thread.sleep(retryInterval.toMillis());
                 }
             } catch (InterruptedException e) {
-                throw new ServiceInvocationException("Unable to connect to server, interrupted");
+                throw new ServiceClientException("Unable to connect to server, interrupted");
             }
         }
-        throw new ServiceInvocationException("Unable to connect to server");
+        throw new ServiceClientException("Unable to connect to server");
     }
 
     public <T extends IService> ClientChannel bindService(Class<T> serviceType, T serviceImpl) {
