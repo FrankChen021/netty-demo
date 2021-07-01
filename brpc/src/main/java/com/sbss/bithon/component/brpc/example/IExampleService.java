@@ -1,7 +1,8 @@
 package com.sbss.bithon.component.brpc.example;
 
 import com.sbss.bithon.component.brpc.IService;
-import com.sbss.bithon.component.brpc.Oneway;
+import com.sbss.bithon.component.brpc.ServiceConfig;
+import com.sbss.bithon.component.brpc.message.serializer.Serializer;
 
 import java.util.List;
 import java.util.Map;
@@ -17,8 +18,8 @@ public interface IExampleService extends IService {
     /**
      * {@link Oneway} test
      */
-    @Oneway
-    void send(String msg);
+    @ServiceConfig(isOneway = true)
+    void sendOneway(String msg);
 
     /**
      * test composite type
@@ -45,4 +46,7 @@ public interface IExampleService extends IService {
     String send(WebRequestMetrics metrics1, WebRequestMetrics metrics2);
     String send(String uri, WebRequestMetrics metrics);
     String send(WebRequestMetrics metrics, String uri);
+
+    @ServiceConfig(serializer = Serializer.JSON)
+    Map<String, String> mergeWithJson(Map<String, String> a, Map<String, String> b);
 }

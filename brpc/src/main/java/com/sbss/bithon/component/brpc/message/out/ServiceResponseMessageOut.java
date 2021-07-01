@@ -2,8 +2,7 @@ package com.sbss.bithon.component.brpc.message.out;
 
 import com.google.protobuf.CodedOutputStream;
 import com.sbss.bithon.component.brpc.message.ServiceMessageType;
-import com.sbss.bithon.component.brpc.message.serializer.BinarySerializer;
-import com.sbss.bithon.component.brpc.message.serializer.ISerializer;
+import com.sbss.bithon.component.brpc.message.serializer.Serializer;
 
 import java.io.IOException;
 
@@ -40,7 +39,7 @@ public class ServiceResponseMessageOut extends ServiceMessageOut {
         } else {
             out.writeRawByte(1);
 
-            ISerializer serializer = BinarySerializer.INSTANCE;
+            Serializer serializer = getSerializer();
             out.writeInt32NoTag(serializer.getType());
             serializer.serialize(out, this.returning);
         }
@@ -70,6 +69,11 @@ public class ServiceResponseMessageOut extends ServiceMessageOut {
 
         public Builder returning(Object ret) {
             response.returning = ret;
+            return this;
+        }
+
+        public Builder serializer(Serializer serializer) {
+            response.setSerializer(serializer);
             return this;
         }
     }

@@ -3,7 +3,7 @@ package com.sbss.bithon.component.brpc.message.in;
 import com.google.protobuf.CodedInputStream;
 import com.sbss.bithon.component.brpc.message.ServiceMessage;
 import com.sbss.bithon.component.brpc.message.ServiceMessageType;
-import com.sbss.bithon.component.brpc.message.serializer.SerializerFactory;
+import com.sbss.bithon.component.brpc.message.serializer.Serializer;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -43,8 +43,7 @@ public class ServiceResponseMessageIn extends ServiceMessageIn {
     public Object getReturning(Type type) throws IOException {
         if (returning != null) {
             int serializer = this.returning.readInt32();
-            return SerializerFactory.getSerializer(serializer)
-                                    .deserialize(this.returning, type);
+            return Serializer.getSerializer(serializer).deserialize(this.returning, type);
         }
         return null;
     }

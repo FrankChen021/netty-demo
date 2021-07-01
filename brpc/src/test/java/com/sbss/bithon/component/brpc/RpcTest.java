@@ -224,16 +224,31 @@ public class RpcTest {
             // test oneway
             //
             long start = System.currentTimeMillis();
-            clientCalculator.send("server");
+            clientCalculator.sendOneway("server");
             long end = System.currentTimeMillis();
             // since 'send' is a oneway method, its implementation blocking for 10 second won't affect server side running time
-            Assert.assertTrue(end - start < 1000);
+            Assert.assertTrue("isOneway failed", end - start < 1000);
 
             //wait for client execution completion
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException ignored) {
             }
+        }
+    }
+
+    @Test
+    public void testJsonSerializer() {
+        try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
+            IExampleService example = ch.getRemoteService(IExampleService.class);
+
+            // test map
+            Assert.assertEquals(
+                ImmutableMap.of("k1", "v1", "k2", "v2"),
+                example.mergeWithJson(
+                    ImmutableMap.of("k1", "v1"),
+                    ImmutableMap.of("k2", "v2"))
+            );
         }
     }
 }

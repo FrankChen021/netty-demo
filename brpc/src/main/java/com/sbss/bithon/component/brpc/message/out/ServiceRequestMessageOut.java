@@ -2,8 +2,7 @@ package com.sbss.bithon.component.brpc.message.out;
 
 import com.google.protobuf.CodedOutputStream;
 import com.sbss.bithon.component.brpc.message.ServiceMessageType;
-import com.sbss.bithon.component.brpc.message.serializer.BinarySerializer;
-import com.sbss.bithon.component.brpc.message.serializer.ISerializer;
+import com.sbss.bithon.component.brpc.message.serializer.Serializer;
 
 import java.io.IOException;
 
@@ -43,12 +42,16 @@ public class ServiceRequestMessageOut extends ServiceMessageOut {
         out.writeStringNoTag(this.serviceName);
         out.writeStringNoTag(this.methodName);
 
-        ISerializer serializer = BinarySerializer.INSTANCE;
+        Serializer serializer = getSerializer();
         out.writeInt32NoTag(serializer.getType());
         out.writeInt32NoTag(this.args.length);
         for (Object arg : this.args) {
             serializer.serialize(out, arg);
         }
+    }
+
+    public boolean isOneway() {
+        return isOneway;
     }
 
     public static class Builder {
@@ -78,8 +81,14 @@ public class ServiceRequestMessageOut extends ServiceMessageOut {
             request.isOneway = isOneway;
             return this;
         }
+
         public ServiceRequestMessageOut build() {
             return request;
+        }
+
+        public Builder serializer(Serializer serializer) {
+            request.setSerializer(serializer);
+            return this;
         }
     }
 }

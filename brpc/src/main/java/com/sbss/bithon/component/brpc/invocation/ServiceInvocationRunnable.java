@@ -95,6 +95,7 @@ public class ServiceInvocationRunnable implements Runnable {
     }
 
     private void sendResponse(ServiceResponseMessageOut serviceResponse) {
+        serviceResponse.setSerializer(serviceRequest.getSerializer());
         channel.writeAndFlush(serviceResponse);
     }
 

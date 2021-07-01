@@ -20,8 +20,12 @@ public class ExampleServiceImpl implements IExampleService {
     }
 
     @Override
-    public void send(String msg) {
+    public void sendOneway(String msg) {
         System.out.println("Got message:" + msg);
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException ignored) {
+        }
     }
 
     @Override
@@ -75,5 +79,10 @@ public class ExampleServiceImpl implements IExampleService {
     @Override
     public String send(WebRequestMetrics metrics, String uri) {
         return metrics.getUri() + "-" + uri;
+    }
+
+    @Override
+    public Map<String, String> mergeWithJson(Map<String, String> a, Map<String, String> b) {
+        return merge(a, b);
     }
 }

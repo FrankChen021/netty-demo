@@ -57,7 +57,8 @@ public class ServiceRegistry {
         public RegistryItem(Method method, Object serviceImpl) {
             this.method = method;
             this.serviceImpl = serviceImpl;
-            this.isOneway = method.getAnnotation(Oneway.class) != null;
+            ServiceConfig sp = method.getAnnotation(ServiceConfig.class);
+            this.isOneway = sp != null && sp.isOneway();
             this.parameterTypes = method.getGenericParameterTypes();
         }
 
