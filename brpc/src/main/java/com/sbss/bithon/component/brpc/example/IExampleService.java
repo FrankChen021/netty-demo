@@ -1,13 +1,12 @@
 package com.sbss.bithon.component.brpc.example;
 
-import com.sbss.bithon.component.brpc.IService;
 import com.sbss.bithon.component.brpc.ServiceConfig;
 import com.sbss.bithon.component.brpc.message.serializer.Serializer;
 
 import java.util.List;
 import java.util.Map;
 
-public interface IExampleService extends IService {
+public interface IExampleService {
     int div(int a, int b);
 
     /**

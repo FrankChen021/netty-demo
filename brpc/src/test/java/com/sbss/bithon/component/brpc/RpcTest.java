@@ -1,5 +1,6 @@
 package com.sbss.bithon.component.brpc;
 
+import com.google.common.collect.ImmutableMap;
 import com.sbss.bithon.component.brpc.channel.ClientChannel;
 import com.sbss.bithon.component.brpc.channel.ServerChannel;
 import com.sbss.bithon.component.brpc.endpoint.EndPoint;
@@ -7,7 +8,6 @@ import com.sbss.bithon.component.brpc.example.ExampleServiceImpl;
 import com.sbss.bithon.component.brpc.example.IExampleService;
 import com.sbss.bithon.component.brpc.example.WebRequestMetrics;
 import com.sbss.bithon.component.brpc.exception.ServiceInvocationException;
-import com.google.common.collect.ImmutableMap;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -38,26 +38,27 @@ public class RpcTest {
     @Test
     public void test() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
-            IExampleService example = ch.getRemoteService(IExampleService.class);
-            IServiceController invoker = (IServiceController) example;
-            invoker.debug(true);
+            IExampleService exampleService = ch.getRemoteService(IExampleService.class);
+
+            IServiceController serviceController = (IServiceController) exampleService;
+            serviceController.debug(true);
             System.out.println("Start calling");
-            Assert.assertEquals(2, example.div(6, 3));
+            Assert.assertEquals(2, exampleService.div(6, 3));
             System.out.println("End calling");
 
             // test primitive array
-            Assert.assertArrayEquals(new int[]{1, 3, 5, 7}, example.append(new int[]{1, 3, 5}, 7));
+            Assert.assertArrayEquals(new int[]{1, 3, 5, 7}, exampleService.append(new int[]{1, 3, 5}, 7));
 
             // test primitive array
-            Assert.assertArrayEquals(new String[]{"a", "b", "c"}, example.append(new String[]{"a", "b"}, "c"));
+            Assert.assertArrayEquals(new String[]{"a", "b", "c"}, exampleService.append(new String[]{"a", "b"}, "c"));
 
             // test collection
-            Assert.assertEquals(Arrays.asList("1", "3"), example.delete(Arrays.asList("1", "2", "3"), 1));
+            Assert.assertEquals(Arrays.asList("1", "3"), exampleService.delete(Arrays.asList("1", "2", "3"), 1));
 
             // test map
             Assert.assertEquals(
                 ImmutableMap.of("k1", "v1", "k2", "v2"),
-                example.merge(ImmutableMap.of("k1", "v1"), ImmutableMap.of("k2", "v2"))
+                exampleService.merge(ImmutableMap.of("k1", "v1"), ImmutableMap.of("k2", "v2"))
             );
         }
     }
@@ -87,42 +88,42 @@ public class RpcTest {
     @Test
     public void testSendMessageLite() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
-            IExampleService example = ch.getRemoteService(IExampleService.class);
+            IExampleService exampleService = ch.getRemoteService(IExampleService.class);
 
-            Assert.assertEquals("/1", example.send(WebRequestMetrics.newBuilder().setUri("/1").build()));
-            Assert.assertEquals("/2", example.send(WebRequestMetrics.newBuilder().setUri("/2").build()));
+            Assert.assertEquals("/1", exampleService.send(WebRequestMetrics.newBuilder().setUri("/1").build()));
+            Assert.assertEquals("/2", exampleService.send(WebRequestMetrics.newBuilder().setUri("/2").build()));
         }
     }
 
     @Test
     public void testMultipleSendMessageLite() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
-            IExampleService example = ch.getRemoteService(IExampleService.class);
+            IExampleService exampleService = ch.getRemoteService(IExampleService.class);
 
-            Assert.assertEquals("/1-/2", example.send(
+            Assert.assertEquals("/1-/2", exampleService.send(
                 WebRequestMetrics.newBuilder().setUri("/1").build(),
                 WebRequestMetrics.newBuilder().setUri("/2").build()
             ));
 
-          Assert.assertEquals("/2-/3", example.send(
-              "/2",
-              WebRequestMetrics.newBuilder().setUri("/3").build()
-          ));
+            Assert.assertEquals("/2-/3", exampleService.send(
+                "/2",
+                WebRequestMetrics.newBuilder().setUri("/3").build()
+            ));
 
-          Assert.assertEquals("/4-/5", example.send(
-              WebRequestMetrics.newBuilder().setUri("/4").build(),
-              "/5"
-          ));
+            Assert.assertEquals("/4-/5", exampleService.send(
+                WebRequestMetrics.newBuilder().setUri("/4").build(),
+                "/5"
+            ));
         }
     }
 
     @Test
     public void testInvocationException() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
-            IExampleService calculator = ch.getRemoteService(IExampleService.class);
+            IExampleService exampleService = ch.getRemoteService(IExampleService.class);
 
             try {
-                calculator.div(6, 0);
+                exampleService.div(6, 0);
                 Assert.fail();
             } catch (ServiceInvocationException e) {
                 System.out.println("Exception Occurred when calling RPC:" + e.getMessage());
@@ -134,23 +135,29 @@ public class RpcTest {
     @Test
     public void testClientSideTimeout() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
-            IExampleService calculator = ch.getRemoteService(IExampleService.class);
+            IExampleService exampleService = ch.getRemoteService(IExampleService.class);
 
-            calculator.block(2);
+            exampleService.block(2);
 
             try {
-                calculator.block(6);
+                exampleService.block(6);
                 Assert.fail();
             } catch (ServiceInvocationException e) {
                 Assert.assertTrue(true);
             }
 
-            calculator.toController().setTimeout(2000);
+            ((IServiceController) exampleService).setTimeout(2000);
             try {
-                calculator.block(3);
+                exampleService.block(3);
                 Assert.fail();
             } catch (ServiceInvocationException e) {
                 Assert.assertTrue(true);
+            }
+
+            //wait server side to complete
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
             }
         }
     }
@@ -158,14 +165,14 @@ public class RpcTest {
     @Test
     public void testConcurrent() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
-            IExampleService calculator = ch.getRemoteService(IExampleService.class);
+            IExampleService exampleService = ch.getRemoteService(IExampleService.class);
 
             AtomicInteger v = new AtomicInteger();
             AtomicInteger i = new AtomicInteger();
             ThreadLocalRandom.current().ints(1000, 5, 1000).parallel().forEach(divisor -> {
                 try {
                     int idx = i.incrementAndGet();
-                    int val = calculator.div(divisor, 1);
+                    int val = exampleService.div(divisor, 1);
                     if (val != divisor) {
                         v.incrementAndGet();
                     }
@@ -202,18 +209,18 @@ public class RpcTest {
             Assert.assertEquals(1, clients.size());
 
             EndPoint endpoint = clients.stream().findFirst().get();
-            IExampleService clientCalculator = serverChannel.getRemoteService(endpoint, IExampleService.class);
+            IExampleService clientService = serverChannel.getRemoteService(endpoint, IExampleService.class);
 
             //
             // test service call from server to client
             //
-            Assert.assertEquals(5, clientCalculator.div(100, 20));
+            Assert.assertEquals(5, clientService.div(100, 20));
 
             //
             // test service exception thrown from client
             //
             try {
-                clientCalculator.block(2);
+                clientService.block(2);
                 Assert.fail("Should not run to here");
             } catch (ServiceInvocationException e) {
                 System.out.println(e.getMessage());
@@ -224,7 +231,7 @@ public class RpcTest {
             // test oneway
             //
             long start = System.currentTimeMillis();
-            clientCalculator.sendOneway("server");
+            clientService.sendOneway("server");
             long end = System.currentTimeMillis();
             // since 'send' is a oneway method, its implementation blocking for 10 second won't affect server side running time
             Assert.assertTrue("isOneway failed", end - start < 1000);
@@ -240,12 +247,12 @@ public class RpcTest {
     @Test
     public void testJsonSerializer() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
-            IExampleService example = ch.getRemoteService(IExampleService.class);
+            IExampleService exampleService = ch.getRemoteService(IExampleService.class);
 
             // test map
             Assert.assertEquals(
                 ImmutableMap.of("k1", "v1", "k2", "v2"),
-                example.mergeWithJson(
+                exampleService.mergeWithJson(
                     ImmutableMap.of("k1", "v1"),
                     ImmutableMap.of("k2", "v2"))
             );
