@@ -26,7 +26,7 @@ public class RpcTest {
     @BeforeClass
     public static void setup() {
         serverChannel = new ServerChannel()
-            .bindService(IExampleService.class, new ExampleServiceImpl()).start(8070).debug(true);
+            .bindService(new ExampleServiceImpl()).start(8070).debug(true);
     }
 
     @AfterClass
@@ -194,7 +194,7 @@ public class RpcTest {
     public void testServerCallsClient() {
         try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
             // bind a service at client side
-            ch.bindService(IExampleService.class, new ExampleServiceImpl() {
+            ch.bindService(new ExampleServiceImpl() {
                 @Override
                 public void block(int timeout) {
                     throw new NotImplementedException();
