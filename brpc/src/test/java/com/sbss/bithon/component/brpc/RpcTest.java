@@ -258,4 +258,15 @@ public class RpcTest {
             );
         }
     }
+
+
+    @Test
+    public void testEmptyArgs() {
+        try (ClientChannel ch = new ClientChannel("127.0.0.1", 8070)) {
+            IExampleService exampleService = ch.getRemoteService(IExampleService.class);
+
+            // test map
+            Assert.assertEquals("pong", exampleService.ping());
+        }
+    }
 }

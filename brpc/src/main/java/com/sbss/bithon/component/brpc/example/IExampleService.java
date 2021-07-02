@@ -50,4 +50,9 @@ public interface IExampleService {
 
     @ServiceConfig(serializer = Serializer.JSON, name = "merge2")
     Map<String, String> mergeWithJson(Map<String, String> a, Map<String, String> b);
+
+    /**
+     * empty arg test
+     */
+    String ping();
 }

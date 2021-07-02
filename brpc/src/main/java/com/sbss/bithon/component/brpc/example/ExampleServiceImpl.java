@@ -85,4 +85,9 @@ public class ExampleServiceImpl implements IExampleService {
     public Map<String, String> mergeWithJson(Map<String, String> a, Map<String, String> b) {
         return merge(a, b);
     }
+
+    @Override
+    public String ping() {
+        return "pong";
+    }
 }
